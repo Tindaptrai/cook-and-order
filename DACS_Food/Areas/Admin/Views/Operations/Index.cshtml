@@ -1,0 +1,208 @@
+@model DACS_Food.ViewModels.AdminOperationsViewModel
+@using DACS_Food.Models
+@using DACS_Food.Services
+@{
+    ViewData["Title"] = "Trung tâm xử lý";
+
+    string OrderBadge(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending or OrderStatus.New => "badge-soft badge-waiting",
+        OrderStatus.Confirmed or OrderStatus.Preparing or OrderStatus.ReadyForDelivery => "badge-soft badge-progress",
+        OrderStatus.Delivering => "badge-soft badge-delivery",
+        OrderStatus.Delivered or OrderStatus.Completed => "badge-soft badge-done",
+        OrderStatus.Cancelled => "badge-soft badge-cancel",
+        _ => "badge-soft"
+    };
+
+    string ReservationBadge(ReservationStatus status) => status switch
+    {
+        ReservationStatus.Pending => "badge-soft badge-waiting",
+        ReservationStatus.Confirmed => "badge-soft badge-progress",
+        ReservationStatus.Completed => "badge-soft badge-done",
+        ReservationStatus.Cancelled => "badge-soft badge-cancel",
+        _ => "badge-soft"
+    };
+
+    OrderStatus? NextOrderStatus(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending or OrderStatus.New => OrderStatus.Confirmed,
+        OrderStatus.Confirmed => OrderStatus.Preparing,
+        OrderStatus.Preparing => OrderStatus.ReadyForDelivery,
+        OrderStatus.ReadyForDelivery => OrderStatus.Delivering,
+        OrderStatus.Delivering => OrderStatus.Completed,
+        _ => null
+    };
+
+    string NextOrderLabel(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending or OrderStatus.New => "Xác nhận",
+        OrderStatus.Confirmed => "Chuẩn bị",
+        OrderStatus.Preparing => "Xong món",
+        OrderStatus.ReadyForDelivery => "Giao hàng",
+        OrderStatus.Delivering => "Đã giao",
+        _ => ""
+    };
+
+    string ReservationLabel(ReservationStatus status) => status switch
+    {
+        ReservationStatus.Pending => "Chờ xác nhận",
+        ReservationStatus.Confirmed => "Đã xác nhận",
+        ReservationStatus.Completed => "Hoàn thành",
+        ReservationStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
+    };
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Trung tâm xử lý đơn</h1>
+        <p>Quản lý tập trung đơn đặt món và lịch đặt bàn để nhân viên không bỏ sót yêu cầu mới.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (TempData["OperationsMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+        @if (TempData["OperationsError"] is string error)
+        {
+            <div class="notice danger">@error</div>
+        }
+
+        <div class="operations-stats">
+            <div class="simple-card"><h3>@Model.PendingOrders</h3><p>Đơn món chờ xác nhận</p></div>
+            <div class="simple-card"><h3>@Model.DeliveringOrders</h3><p>Đơn đang giao</p></div>
+            <div class="simple-card"><h3>@Model.PendingReservations</h3><p>Đặt bàn chờ xác nhận</p></div>
+            <div class="simple-card"><h3>@Model.TodayReservations</h3><p>Lịch đặt bàn hôm nay</p></div>
+        </div>
+
+        <div class="operations-grid">
+            <div class="operations-panel">
+                <div class="section-head compact">
+                    <div class="section-title">
+                        <h2>Đơn đặt món</h2>
+                        <p>Danh sách đơn online mới nhất, gồm trạng thái món và vận đơn.</p>
+                    </div>
+                    <a class="btn btn-outline" href="/admin/don-hang">Xem toàn bộ</a>
+                </div>
+
+                <div class="admin-table-wrap">
+                    <table class="admin-table operations-table">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Khách</th>
+                                <th>Tổng</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.Orders)
+                            {
+                                var next = NextOrderStatus(order.OrderStatus);
+                                <tr>
+                                    <td>
+                                        <strong>@order.OrderCode</strong>
+                                        <small>@order.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <strong>@order.CustomerName</strong>
+                                        <small>@order.PhoneNumber</small>
+                                    </td>
+                                    <td>@order.TotalAmount.ToString("N0")đ</td>
+                                    <td>
+                                        <span class="@OrderBadge(order.OrderStatus)">@OrderService.GetOrderStatusLabel(order.OrderStatus)</span>
+                                        <small>@OrderService.GetDeliveryStatusLabel(order.DeliveryStatus)</small>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a class="small-btn neutral" href="/admin/don-hang/@order.Id">Chi tiết</a>
+                                            @if (next.HasValue)
+                                            {
+                                                <form method="post" action="/admin/trung-tam-xu-ly/don-hang">
+                                                    <input type="hidden" name="id" value="@order.Id" />
+                                                    <input type="hidden" name="status" value="@next.Value" />
+                                                    <button class="small-btn" type="submit">@NextOrderLabel(order.OrderStatus)</button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="operations-panel">
+                <div class="section-head compact">
+                    <div class="section-title">
+                        <h2>Lịch đặt bàn</h2>
+                        <p>Các lượt đặt bàn đang chờ xử lý hoặc sắp đến giờ phục vụ.</p>
+                    </div>
+                    <a class="btn btn-outline" href="/admin/ban">Quản lý bàn</a>
+                </div>
+
+                <div class="admin-table-wrap">
+                    <table class="admin-table operations-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Khách</th>
+                                <th>Bàn</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var reservation in Model.Reservations)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@reservation.StartAt.ToString("dd/MM/yyyy")</strong>
+                                        <small>@reservation.StartAt.ToString("HH:mm") - @reservation.DurationMinutes phút</small>
+                                    </td>
+                                    <td>
+                                        <strong>@reservation.CustomerName</strong>
+                                        <small>@reservation.PhoneNumber</small>
+                                    </td>
+                                    <td>@(reservation.RestaurantTable?.Name ?? $"Bàn #{reservation.RestaurantTableId}")</td>
+                                    <td><span class="@ReservationBadge(reservation.Status)">@ReservationLabel(reservation.Status)</span></td>
+                                    <td>
+                                        <div class="table-actions">
+                                            @if (reservation.Status == ReservationStatus.Pending)
+                                            {
+                                                <form method="post" action="/admin/trung-tam-xu-ly/dat-ban">
+                                                    <input type="hidden" name="id" value="@reservation.Id" />
+                                                    <input type="hidden" name="status" value="Confirmed" />
+                                                    <button class="small-btn" type="submit">Xác nhận</button>
+                                                </form>
+                                            }
+                                            @if (reservation.Status == ReservationStatus.Pending || reservation.Status == ReservationStatus.Confirmed)
+                                            {
+                                                <form method="post" action="/admin/trung-tam-xu-ly/dat-ban">
+                                                    <input type="hidden" name="id" value="@reservation.Id" />
+                                                    <input type="hidden" name="status" value="Completed" />
+                                                    <button class="small-btn neutral" type="submit">Hoàn thành</button>
+                                                </form>
+                                                <form method="post" action="/admin/trung-tam-xu-ly/dat-ban">
+                                                    <input type="hidden" name="id" value="@reservation.Id" />
+                                                    <input type="hidden" name="status" value="Cancelled" />
+                                                    <button class="small-btn danger" type="submit">Hủy</button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

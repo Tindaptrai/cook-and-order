@@ -1,0 +1,86 @@
+﻿@{
+    ViewData["Title"] = "Cách chọn thực phẩm";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/css/food-guide.css" asp-append-version="true" />
+}
+
+<section class="food-guide-hero">
+    <div class="container food-guide-hero-inner">
+        <div>
+            <p class="section-eyebrow">FoodieTTTM guide</p>
+            <h1>Cách chọn thực phẩm tươi, sạch và an toàn</h1>
+        </div>
+    </div>
+</section>
+
+<section class="food-guide-section" id="foodGuideCatalog">
+    <div class="container">
+        <div class="food-guide-toolbar">
+            <div>
+                <h2>Danh sách thực phẩm</h2>
+                <p id="foodGuideResultText">Đang hiển thị tất cả thực phẩm.</p>
+            </div>
+            <label class="food-guide-search">
+                <span>Tìm nhanh</span>
+                <input id="foodGuideSearchInput" type="search" placeholder="Nhập: cà chua, tomato, pork..." />
+            </label>
+        </div>
+
+        <div class="food-guide-filters" aria-label="Lọc nhóm thực phẩm">
+            <button class="active" type="button" data-category="all">Tất cả</button>
+            <button type="button" data-category="rau-cu">Rau củ</button>
+            <button type="button" data-category="trai-cay">Trái cây</button>
+            <button type="button" data-category="thit">Thịt</button>
+            <button type="button" data-category="ca-hai-san">Cá & hải sản</button>
+            <button type="button" data-category="trung-sua">Trứng & sữa</button>
+            <button type="button" data-category="dau-hat-ngu-coc">Đậu, hạt & ngũ cốc</button>
+            <button type="button" data-category="gia-vi-thuc-pham-kho">Gia vị & thực phẩm khô</button>
+        </div>
+
+        <div class="food-guide-grid" id="foodGuideGrid"></div>
+
+        <div class="food-guide-safety-note">
+            <h2>Lưu ý an toàn thực phẩm</h2>
+            <p>Khi chọn mua thực phẩm, nên ưu tiên nguyên liệu tươi, có nguồn gốc rõ ràng, không có mùi lạ, không bị dập nát, biến màu hoặc chảy dịch bất thường. Luôn rửa tay, rửa sạch nguyên liệu trước khi chế biến, tách riêng thực phẩm sống và chín, đồng thời nấu chín kỹ thịt, cá, trứng và hải sản để đảm bảo an toàn.</p>
+        </div>
+    </div>
+</section>
+
+<div class="food-guide-modal" id="foodGuideModal" aria-hidden="true">
+    <div class="food-guide-modal-backdrop" onclick="closeFoodGuideModal()"></div>
+    <article class="food-guide-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="foodGuideModalNameVi">
+        <button class="food-guide-modal-close" type="button" onclick="closeFoodGuideModal()" aria-label="Đóng">×</button>
+        <div class="food-guide-modal-image">
+            <img id="foodGuideModalImage" src="" alt="" />
+            <span id="foodGuideModalCategory"></span>
+        </div>
+        <div class="food-guide-modal-content">
+            <p class="section-eyebrow" id="foodGuideModalNameEn"></p>
+            <h2 id="foodGuideModalNameVi"></h2>
+            <p id="foodGuideModalDesc"></p>
+            <div class="food-guide-detail-block guide-choose">
+                <h3><span>✓</span> Cách chọn</h3>
+                <ul id="foodGuideModalChooseTips"></ul>
+            </div>
+            <div class="food-guide-detail-block guide-avoid">
+                <h3><span>!</span> Nên tránh</h3>
+                <ul id="foodGuideModalAvoidSigns"></ul>
+            </div>
+            <div class="food-guide-detail-block guide-storage">
+                <h3><span>↧</span> Bảo quản</h3>
+                <ul id="foodGuideModalStorage"></ul>
+            </div>
+            <div class="food-guide-detail-block guide-safety">
+                <h3><span>i</span> An toàn</h3>
+                <p id="foodGuideModalSafety"></p>
+            </div>
+        </div>
+    </article>
+</div>
+
+@section Scripts {
+    <script src="~/assets/js/food-guide.js" asp-append-version="true"></script>
+}
+

@@ -1,0 +1,112 @@
+THIET KE BACKEND FOODIELAB - DACS_FOOD
+
+1. Phan tich nghiep vu
+
+Website FoodieLab la website ban do an ket hop cong thuc nau an. Backend can quan ly cac luong chinh:
+- Khach hang xem menu, loc theo danh muc, xem chi tiet mon an.
+- Khach hang them mon vao gio hang, tao don hang, chon COD hoac QR chuyen khoan demo.
+- Khach hang dang ky, dang nhap, xac thuc OTP Gmail.
+- He thong chong spam gui OTP theo email va IP.
+- He thong quan ly 10 ban: 2 ban private, 8 ban thuong.
+- He thong ap ma giam gia gio vang trong 2 khung 10:30-12:30 va 16:00-18:00.
+- Thanh vien than thiet duoc dung ma giam gia voi tan suat 1 tuan/lien.
+- Admin quan ly mon an, danh muc, don hang, nguoi dung, ban va ma giam gia.
+
+2. Database schema de xuat
+
+Nguoi dung:
+- ApplicationUser ke thua IdentityUser: FullName, IsEmailVerified, LoyaltyLevel, CreatedAt.
+
+OTP:
+- EmailOtps: Id, UserId, Email, CodeHash, Purpose, ExpiresAt, UsedAt, FailedAttempts, CreatedAt.
+- OtpSendLogs: Id, Email, IpAddress, Purpose, SentAt.
+
+Mon an:
+- FoodCategories: Id, Name, Slug, Description, IsActive, SortOrder.
+- FoodItems: Id, FoodCategoryId, Name, Slug, Description, Ingredients, Story, Price, ImageUrl, Tag, IsBestSeller, IsActive, CreatedAt, UpdatedAt.
+
+Cong thuc:
+- Recipes: Id, FoodItemId, Title, Slug, Description, Ingredients, Steps, ImageUrl, Difficulty, CookingTimeMinutes, IsActive, CreatedAt.
+
+Gio hang:
+- Carts: Id, UserId, SessionId, CreatedAt, UpdatedAt.
+- CartItems: Id, CartId, FoodItemId, Quantity, UnitPrice.
+
+Don hang:
+- Orders: Id, OrderCode, UserId, CustomerName, PhoneNumber, Address, OrderType, TableId, Subtotal, DiscountAmount, TotalAmount, PaymentMethod, PaymentStatus, OrderStatus, DiscountCodeId, CreatedAt.
+- OrderItems: Id, OrderId, FoodItemId, FoodName, UnitPrice, Quantity, LineTotal.
+
+Thanh toan:
+- Payments: Id, OrderId, Method, Amount, QrContent, BankAccountName, BankAccountNumber, BankName, Status, CreatedAt, PaidAt.
+
+Ban:
+- RestaurantTables: Id, TableNumber, Name, TableType, Capacity, Status, IsActive.
+
+Ma giam gia:
+- DiscountCodes: Id, Code, Name, DiscountType, DiscountValue, MinOrderAmount, MaxDiscountAmount, UsageLimit, UsedCount, DiscountScope, StartAt, EndAt, IsActive.
+- DiscountUsages: Id, DiscountCodeId, UserId, OrderId, UsedAt.
+
+3. Models, Controllers, Services can tao
+
+Models:
+- ApplicationUser, FoodCategory, FoodItem, Recipe, Cart, CartItem, Order, OrderItem, Payment, RestaurantTable, DiscountCode, DiscountUsage, EmailOtp, OtpSendLog.
+- Enums: PaymentMethod, PaymentStatus, OrderStatus, OrderType, TableType, TableStatus, DiscountType, DiscountScope, OtpPurpose.
+- ViewModels: MenuViewModel, FoodDetailViewModel, CartViewModel, CheckoutViewModel, CreateOrderViewModel, LoginViewModel, RegisterViewModel, VerifyOtpViewModel.
+
+Controllers:
+- HomeController: trang chu va cac trang noi dung co san.
+- MenuController: menu, loc danh muc, chi tiet mon.
+- CartController: xem gio, them, cap nhat, xoa.
+- OrderController: checkout, tao don, xem thanh cong.
+- PaymentController: QR demo, xac nhan thanh toan demo.
+- AccountController: dang ky, dang nhap, xac thuc OTP, gui lai OTP, dang xuat.
+- TableController: danh sach ban.
+- Admin area: DashboardController, FoodItemsController, OrdersController, UsersController, TablesController, DiscountCodesController.
+
+Services:
+- IFoodService, ICategoryService, ICartService, IOrderService, IPaymentService, IEmailSender, IOtpService, IOtpRateLimitService, ITableService, IDiscountService.
+
+4. Route/action MVC de xuat
+
+Public:
+- GET / -> Home/Index
+- GET /menu -> Menu/Index
+- GET /menu/{slug} -> Menu/Detail
+- GET /cart -> Cart/Index
+- POST /cart/add -> Cart/Add
+- POST /cart/update -> Cart/Update
+- POST /cart/remove -> Cart/Remove
+- GET /checkout -> Order/Checkout
+- POST /orders/create -> Order/Create
+- GET /orders/success/{code} -> Order/Success
+- GET /payment/qr/{orderCode} -> Payment/Qr
+- POST /payment/demo-confirm -> Payment/DemoConfirm
+- GET /dang-nhap -> Account/Login
+- POST /dang-nhap -> Account/Login
+- GET /dang-ky -> Account/Register
+- POST /dang-ky -> Account/Register
+- GET /xac-thuc-otp -> Account/VerifyOtp
+- POST /xac-thuc-otp -> Account/VerifyOtp
+- POST /gui-lai-otp -> Account/ResendOtp
+- POST /dang-xuat -> Account/Logout
+- GET /ban -> Table/Index
+
+Admin:
+- GET /admin
+- GET /admin/mon-an
+- GET /admin/don-hang
+- GET /admin/nguoi-dung
+- GET /admin/ban
+- GET /admin/ma-giam-gia
+
+5. Thu tu trien khai
+
+Buoc 1: Them EF Core, Identity va ApplicationDbContext.
+Buoc 2: Tao entity va enum.
+Buoc 3: Seed danh muc, mot so mon mau, 10 ban va ma giam gia.
+Buoc 4: Tao service menu/category/table/discount/order/cart/payment/otp.
+Buoc 5: Tao controller public.
+Buoc 6: Tao admin area nen.
+Buoc 7: Chuyen tung man hinh frontend tu JS tam sang du lieu database.
+Buoc 8: Hoan thien OTP Gmail va chong spam.
+Buoc 9: Kiem thu luong dat mon, thanh toan COD/QR, ap ma giam gia, admin cap nhat don.

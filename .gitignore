@@ -1,0 +1,47 @@
+## ASP.NET Core / Visual Studio
+bin/
+obj/
+.vs/
+.vscode/
+.codex-build/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Local configuration and secrets
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
+.env
+.env.*
+secrets.json
+
+## Logs and test output
+logs/
+*.log
+TestResults/
+
+## Upload temp files
+/wwwroot/uploads/temp/
+**/wwwroot/uploads/temp/
+**/wwwroot/uploads/
+
+## Local databases
+*.db
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+
+## Backups and archives
+*.bak
+*.bak-*
+*.tmp
+*.zip
+*.rar
+*.7z
+
+## OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,109 @@
+﻿@model DACS_Food.Models.FoodItem
+@using System.Text.Encodings.Web
+@using System.Globalization
+@{
+    ViewData["Title"] = Model.Name;
+    var relatedFoods = ViewBag.RelatedFoods as IReadOnlyList<DACS_Food.Models.FoodItem> ?? Array.Empty<DACS_Food.Models.FoodItem>();
+    var effectivePrice = Model.DiscountPrice ?? Model.Price;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/css/menu.css" asp-append-version="true" />
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">@Model.Tag</div>
+        <h1>@Model.Name</h1>
+        <p>@Model.Description</p>
+    </div>
+</section>
+
+<section class="section section-light food-detail-page">
+    <div class="container food-detail-page-grid">
+        <div class="food-detail-page-media">
+            <img src="@Model.ImageUrl" alt="@Model.Name" onerror="this.onerror=null;this.src='/images/foods/fallback-food.jpg';" />
+        </div>
+        <div class="food-detail-page-content">
+            <div class="food-detail-status">
+                <span>@(Model.FoodCategory?.Name ?? Model.Category)</span>
+                <span class="@(Model.IsAvailable ? "available" : "unavailable")">@(Model.IsAvailable ? "Còn món" : "Hết món")</span>
+            </div>
+
+            <h2>@Model.Name</h2>
+            <div class="food-detail-price">
+                <strong>@effectivePrice.ToString("N0")đ</strong>
+                @if (Model.DiscountPrice.HasValue && Model.DiscountPrice.Value < Model.Price)
+                {
+                    <del>@Model.Price.ToString("N0")đ</del>
+                }
+            </div>
+
+            <p>@(string.IsNullOrWhiteSpace(Model.DetailDescription) ? Model.Story : Model.DetailDescription)</p>
+
+            <div class="food-detail-facts">
+                <div><span>Calo</span><strong>@(Model.Calories > 0 ? $"{Model.Calories} kcal" : "Đang cập nhật")</strong></div>
+                <div><span>Khẩu phần</span><strong>@(string.IsNullOrWhiteSpace(Model.ServingSize) ? "1 người" : Model.ServingSize)</strong></div>
+            </div>
+
+            <div class="food-detail-info-block">
+                <h3>Thành phần/nguyên liệu</h3>
+                <p>@Model.Ingredients</p>
+            </div>
+
+            <div class="food-detail-info-block">
+                <h3>Độ cay</h3>
+                <p>@(string.IsNullOrWhiteSpace(Model.SpiceLevel) ? "Không cay" : Model.SpiceLevel)</p>
+            </div>
+
+            <div class="food-detail-alert">
+                <h3>Dị ứng</h3>
+                <p>@(string.IsNullOrWhiteSpace(Model.Allergens) ? Model.AllergyNote : Model.Allergens)</p>
+            </div>
+
+            <div class="menu-card-actions food-detail-cart-actions">
+                <div class="menu-quantity-control">
+                    <button type="button" @(Model.IsAvailable ? "" : "disabled") onclick="changeQuantityInput('detailQty', -1)">-</button>
+                    <input id="detailQty" type="number" min="1" max="20" value="1" @(Model.IsAvailable ? "" : "disabled") oninput="normalizeQuantityInput(this)" />
+                    <button type="button" @(Model.IsAvailable ? "" : "disabled") onclick="changeQuantityInput('detailQty', 1)">+</button>
+                </div>
+                <button class="btn btn-primary" type="button" @(Model.IsAvailable ? "" : "disabled") onclick="addToCartFromQuantity('@JavaScriptEncoder.Default.Encode(Model.Name)', @effectivePrice.ToString(CultureInfo.InvariantCulture), '@JavaScriptEncoder.Default.Encode(Model.ImageUrl)', @Model.Id, 'detailQty')">Thêm vào giỏ hàng</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (relatedFoods.Any())
+{
+    <section class="section section-soft">
+        <div class="container">
+            <div class="section-head">
+                <div class="section-title">
+                    <h2>Món liên quan</h2>
+                    <p>Gợi ý các món cùng danh mục hoặc cùng nhóm món để bạn dễ chọn thêm.</p>
+                </div>
+            </div>
+            <div class="food-grid">
+                @foreach (var item in relatedFoods)
+                {
+                    <article class="food-card">
+                        <a href="/menu/@item.Slug">
+                            <div class="food-img">
+                                <img src="@item.ImageUrl" alt="@item.Name" onerror="this.onerror=null;this.src='/images/foods/fallback-food.jpg';" />
+                                <span class="food-tag">@(item.IsAvailable ? "Còn món" : "Hết món")</span>
+                            </div>
+                            <div class="food-body">
+                                <h3>@item.Name</h3>
+                                <p>@item.Description</p>
+                                <div class="food-bottom">
+                                    <span class="price">@((item.DiscountPrice ?? item.Price).ToString("N0"))đ</span>
+                                    <span class="small-btn">Xem chi tiết</span>
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+}

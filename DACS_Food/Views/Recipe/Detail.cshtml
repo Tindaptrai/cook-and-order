@@ -1,0 +1,47 @@
+﻿@model DACS_Food.Models.Recipe
+@{
+    ViewData["Title"] = Model.Title;
+    var ingredients = Model.Ingredients.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var steps = Model.Steps.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+
+<section class="recipe-detail-page">
+    <div class="container recipe-detail-grid">
+        <div class="recipe-detail-copy">
+            <p class="section-eyebrow">Công thức FoodieTTTM</p>
+            <h1>@Model.Title</h1>
+            <p>@Model.Description</p>
+            <div class="recipe-meta">
+                <span>@Model.Difficulty</span>
+                <span>@Model.CookingTimeMinutes phút</span>
+            </div>
+        </div>
+        <div class="recipe-detail-image">
+            <img src="@Model.ImageUrl" alt="@Model.Title" />
+        </div>
+    </div>
+</section>
+
+<section class="recipe-content-section">
+    <div class="container recipe-content-grid">
+        <div>
+            <h2>Nguyên liệu</h2>
+            <ul class="recipe-list">
+                @foreach (var ingredient in ingredients)
+                {
+                    <li>@ingredient</li>
+                }
+            </ul>
+        </div>
+        <div>
+            <h2>Cách làm</h2>
+            <ol class="recipe-list recipe-steps">
+                @foreach (var step in steps)
+                {
+                    <li>@step</li>
+                }
+            </ol>
+        </div>
+    </div>
+</section>
+

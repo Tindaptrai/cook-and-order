@@ -1,0 +1,47 @@
+@model DACS_Food.ViewModels.CheckoutViewModel
+@using DACS_Food.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    ViewData["Title"] = "Thanh toán";
+    var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
+    var customerName = currentUser?.FullName ?? "";
+    var phoneNumber = currentUser?.PhoneNumber ?? "";
+    var customerEmail = currentUser?.Email ?? "";
+}
+
+<section class="page-hero"><div class="container"><div class="badge">💳 Thanh toán</div><h1>Thông tin thanh toán và vận đơn</h1><p>COD hoặc QR chuyển khoản demo.</p></div></section>
+<section class="section section-soft">
+    <div class="container checkout-layout">
+        <form class="checkout-card light" id="checkoutForm" method="post" action="/orders/create">
+            <h3>Thông tin nhận hàng</h3>
+            @if (TempData["OrderError"] is string error)
+            {
+                <p class="muted-text">@error</p>
+            }
+            <div class="form-group">
+                <input name="CustomerEmail" value="@customerEmail" placeholder="Email nhận xác nhận đơn hàng" type="email" />
+                <input name="CustomerName" value="@customerName" placeholder="Họ tên" required />
+                <input name="PhoneNumber" value="@phoneNumber" placeholder="Số điện thoại" required />
+                <textarea name="Address" rows="4" placeholder="Địa chỉ giao hàng" required></textarea>
+                <select name="PaymentMethod">
+                    <option value="QR">Chuyển khoản QR</option>
+                    <option value="COD">Tiền mặt / COD</option>
+                </select>
+                <input name="DiscountCode" placeholder="Mã giảm giá: GIOVANG10 hoặc THANTHIET15" />
+                <input type="hidden" name="CartJson" id="checkoutCartJson" />
+                <button class="btn btn-primary" type="submit">Tạo đơn hàng</button>
+            </div>
+        </form>
+        <div class="checkout-card">
+            <h3>Đơn hàng của bạn</h3>
+            <div class="cart-list" id="checkoutList">
+                @foreach (var item in Model.Cart.Items)
+                {
+                    <div class="cart-item"><span>@item.FoodItem?.Name x @item.Quantity</span><strong>@((item.UnitPrice * item.Quantity).ToString("N0"))đ</strong></div>
+                }
+            </div>
+            <div class="cart-total" style="color:white;"><span>Tổng tiền:</span><span id="checkoutTotal">@Model.Cart.Subtotal.ToString("N0")đ</span></div>
+        </div>
+    </div>
+</section>

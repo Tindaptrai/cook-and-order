@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Món ăn";
+    var currentPage = ViewBag.Page as int? ?? 1;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">🍱 Menu quán - Trang @currentPage/5</div>
+        <h1>Menu món ăn</h1>
+        <p>Mỗi trang có 12 thẻ món ăn. Khi chọn danh mục như Món chay hoặc Healthy, website sẽ hiển thị toàn bộ món thuộc danh mục đó trong cả 5 trang.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-title">
+                <h2>Danh sách món trang @currentPage</h2>
+                <p>Trang này đang hiển thị món số @(((currentPage - 1) * 12) + 1) đến @(currentPage * 12) trong tổng 60 món.</p>
+            </div>
+            <div class="search-box">
+                <span>🔎</span>
+                <input type="text" id="searchInput" placeholder="Tìm món trong trang hoặc danh mục..." oninput="filterFoods()" />
+            </div>
+        </div>
+        <div class="filters">
+            <button class="filter-btn active" data-category="all">Tất cả</button>
+            <button class="filter-btn" data-category="cơm">Cơm</button>
+            <button class="filter-btn" data-category="mì">Mì</button>
+            <button class="filter-btn" data-category="món chay">Món chay</button>
+            <button class="filter-btn" data-category="healthy">Healthy</button>
+            <button class="filter-btn" data-category="gà">Gà</button>
+            <button class="filter-btn" data-category="fastfood">Fastfood</button>
+            <button class="filter-btn" data-category="ăn vặt">Ăn vặt</button>
+            <button class="filter-btn" data-category="đồ uống">Đồ uống</button>
+        </div>
+        <div class="food-grid" id="menuFoodGrid" data-current-page="@currentPage"></div>
+        <div class="pagination" id="menuPagination">
+            @for (var i = 1; i <= 5; i++)
+            {
+                <a class="@(i == currentPage ? "active" : "")" asp-controller="Home" asp-action="Menu" asp-route-page="@i">@i</a>
+            }
+        </div>
+    </div>
+</section>

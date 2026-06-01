@@ -1,0 +1,42 @@
+﻿@model IEnumerable<DACS_Food.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "Người dùng";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý người dùng</h1>
+        <p>@Model.Count() tài khoản đang có trong hệ thống.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        <div class="admin-table-wrap">
+            <table class="admin-table operations-table">
+                <thead>
+                    <tr>
+                        <th>Người dùng</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Xác thực email</th>
+                        <th>Hạng thành viên</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td><strong>@(string.IsNullOrWhiteSpace(user.FullName) ? "Chưa cập nhật" : user.FullName)</strong></td>
+                            <td>@user.Email</td>
+                            <td>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "Chưa cập nhật" : user.PhoneNumber)</td>
+                            <td><span class="badge-soft @(user.IsEmailVerified ? "badge-done" : "badge-waiting")">@(user.IsEmailVerified ? "Đã xác thực" : "Chưa xác thực")</span></td>
+                            <td>@user.LoyaltyLevel</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

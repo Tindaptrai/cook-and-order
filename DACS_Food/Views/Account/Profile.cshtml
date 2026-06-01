@@ -1,0 +1,195 @@
+﻿@model DACS_Food.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Tài khoản";
+    var orderCount = ViewBag.OrderCount ?? 0;
+    var totalSpent = ViewBag.TotalSpent ?? 0m;
+    var nextLevel = ViewBag.NextLevel as string ?? "Bạc";
+    var nextLevelTarget = ViewBag.NextLevelTarget as decimal?;
+    var spent = (decimal)totalSpent;
+    var currentTarget = Model.LoyaltyLevel switch
+    {
+        "Bạc" => 1000000m,
+        "Vàng" => 4999000m,
+        "Bạch kim" => 9999000m,
+        _ => 0m
+    };
+    var progressTarget = nextLevelTarget ?? 9999000m;
+    var progressPercent = progressTarget <= 0 ? 100 : Math.Min(100, Math.Round(spent / progressTarget * 100, 0));
+    var remainingToNext = nextLevelTarget.HasValue ? Math.Max(0, nextLevelTarget.Value - spent) : 0;
+    var avatarUrl = Model.AvatarUrl;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">👤 Tài khoản</div>
+        <div class="profile-hero-head">
+            <div class="profile-avatar profile-avatar-large">
+                @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    <img src="@avatarUrl" alt="Avatar của @Model.FullName" />
+                }
+                else
+                {
+                    <span>👤</span>
+                }
+            </div>
+            <div>
+                <h1>@Model.FullName</h1>
+                <p>Quản lý thông tin tài khoản, hạng thành viên và ưu đãi FoodieTTTM.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container simple-grid">
+        <div class="simple-card profile-avatar-card">
+            <h3>Avatar cá nhân</h3>
+            <div class="profile-avatar-preview">
+                @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    <img src="@avatarUrl" alt="Avatar của @Model.FullName" />
+                }
+                else
+                {
+                    <span>👤</span>
+                }
+            </div>
+            <p>Chọn ảnh của bạn để hiển thị trên tài khoản. Nếu chưa có ảnh, hệ thống dùng icon mặc định.</p>
+            @if (TempData["AvatarMessage"] != null)
+            {
+                <p class="form-success">@TempData["AvatarMessage"]</p>
+            }
+            @if (TempData["AvatarError"] != null)
+            {
+                <p class="form-error">@TempData["AvatarError"]</p>
+            }
+            <form class="avatar-upload-form" method="post" action="/tai-khoan/avatar" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp,image/gif" required />
+                <button class="btn btn-primary" type="submit">Cập nhật ảnh</button>
+            </form>
+        </div>
+
+        <div class="simple-card">
+            <h3>Thông tin tài khoản</h3>
+            <p><strong>Email:</strong> @Model.Email</p>
+            <p><strong>Số điện thoại:</strong> @(Model.PhoneNumber ?? "Chưa cập nhật")</p>
+            <p><strong>Xác thực Gmail:</strong> @(Model.IsEmailVerified ? "Đã xác thực" : "Chưa xác thực")</p>
+            <p><strong>Ngày tạo:</strong> @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+        </div>
+
+        <div class="simple-card" id="hang-thanh-vien">
+            <h3>Hạng thành viên</h3>
+            <p><strong>Hiện tại:</strong> @Model.LoyaltyLevel</p>
+            <p><strong>Hạng tiếp theo:</strong> @nextLevel</p>
+            <p><strong>Tổng tích lũy hợp lệ:</strong> @spent.ToString("N0")đ</p>
+            @if (nextLevelTarget.HasValue)
+            {
+                <p><strong>Còn thiếu:</strong> @remainingToNext.ToString("N0")đ để lên @nextLevel</p>
+            }
+            <a class="btn btn-outline" href="#quyen-loi-thanh-vien">Xem quyền lợi</a>
+        </div>
+
+        <div class="simple-card">
+            <h3>Thống kê mua hàng</h3>
+            <p><strong>Số đơn:</strong> @orderCount</p>
+            <p><strong>Tổng chi tiêu:</strong> @(((decimal)totalSpent).ToString("N0"))đ</p>
+            <a class="btn btn-primary" href="/lich-su-don-hang">Xem lịch sử</a>
+        </div>
+    </div>
+</section>
+
+<section class="section loyalty-section" id="quyen-loi-thanh-vien">
+    <div class="container">
+        <div class="loyalty-board">
+            <div class="loyalty-current">
+                <div>
+                    <span class="loyalty-eyebrow">Hành trình thành viên</span>
+                    <h2>@Model.LoyaltyLevel</h2>
+                    <p>Hạng được tính theo tổng chi tiêu hợp lệ của các đơn đã thanh toán hoặc đã hoàn thành bằng đúng tài khoản này.</p>
+                </div>
+                <div class="loyalty-meter-card">
+                    <div class="loyalty-meter-head">
+                        <span>Đã tích lũy</span>
+                        <strong>@spent.ToString("N0")đ</strong>
+                    </div>
+                    <div class="loyalty-progress">
+                        <span style="width: @progressPercent%"></span>
+                    </div>
+                    @if (nextLevelTarget.HasValue)
+                    {
+                        <p>Còn @remainingToNext.ToString("N0")đ để đạt hạng @nextLevel.</p>
+                    }
+                    else
+                    {
+                        <p>Bạn đã đạt hạng cao nhất của FoodieTTTM.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="loyalty-levels">
+                <article class="loyalty-tier @(Model.LoyaltyLevel == "Thành viên" ? "active" : "")">
+                    <div class="tier-head">
+                        <span class="tier-icon">01</span>
+                        <div>
+                            <h3>Thành viên</h3>
+                            <p>Dưới 1.000.000đ</p>
+                        </div>
+                    </div>
+                    <ul>
+                        <li>Nhận mã ưu đãi thành viên cơ bản.</li>
+                        <li>Lưu lịch sử đơn hàng và tra cứu nhanh.</li>
+                        <li>Nhận gợi ý món theo thói quen đặt hàng.</li>
+                    </ul>
+                </article>
+
+                <article class="loyalty-tier @(Model.LoyaltyLevel == "Bạc" ? "active" : "")">
+                    <div class="tier-head">
+                        <span class="tier-icon">02</span>
+                        <div>
+                            <h3>Bạc</h3>
+                            <p>Từ 1.000.000đ đến dưới 4.999.000đ</p>
+                        </div>
+                    </div>
+                    <ul>
+                        <li>Dùng mã giảm giá dành cho hạng Bạc trở lên.</li>
+                        <li>Ưu tiên nhận mã giảm theo tuần.</li>
+                        <li>Được ghi nhận tích lũy cho mọi đơn hợp lệ.</li>
+                    </ul>
+                </article>
+
+                <article class="loyalty-tier @(Model.LoyaltyLevel == "Vàng" ? "active" : "")">
+                    <div class="tier-head">
+                        <span class="tier-icon">03</span>
+                        <div>
+                            <h3>Vàng</h3>
+                            <p>Từ 4.999.000đ đến dưới 9.999.000đ</p>
+                        </div>
+                    </div>
+                    <ul>
+                        <li>Mở khóa mã giảm giá hạng Vàng.</li>
+                        <li>Ưu đãi tốt hơn cho đơn có giá trị cao.</li>
+                        <li>Ưu tiên chương trình giờ vàng và dịp đặc biệt.</li>
+                    </ul>
+                </article>
+
+                <article class="loyalty-tier @(Model.LoyaltyLevel == "Bạch kim" ? "active" : "")">
+                    <div class="tier-head">
+                        <span class="tier-icon">04</span>
+                        <div>
+                            <h3>Bạch kim</h3>
+                            <p>Từ 9.999.000đ trở lên</p>
+                        </div>
+                    </div>
+                    <ul>
+                        <li>Mở khóa mã giảm giá cao nhất.</li>
+                        <li>Ưu tiên các ưu đãi giới hạn số lượng.</li>
+                        <li>Được giữ ở nhóm khách hàng thân thiết cao nhất.</li>
+                    </ul>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+

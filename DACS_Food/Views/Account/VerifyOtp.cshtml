@@ -1,0 +1,51 @@
+@model DACS_Food.ViewModels.VerifyOtpViewModel
+@{ ViewData["Title"] = "Xác thực OTP"; }
+
+<section class="auth-page">
+    <div class="container auth-shell">
+        <div class="auth-intro">
+            <div class="badge">Bảo mật tài khoản</div>
+            <h1>Xác thực Gmail</h1>
+            <p>Nhập mã OTP 8 chữ số đã gửi về email <strong>@Model.Email</strong>. Mã có hiệu lực trong 5 phút.</p>
+            <div class="auth-benefits">
+                <span>8 chữ số</span>
+                <span>Hết hạn sau 5 phút</span>
+                <span>Gửi lại sau 60 giây</span>
+            </div>
+        </div>
+
+        <div class="auth-otp-stack">
+            <form class="auth-card auth-login-card" method="post">
+                <span class="auth-eyebrow">Kiểm tra Gmail</span>
+                <h3>Mã OTP</h3>
+                <p>Vui lòng nhập đúng 8 chữ số trong email xác thực.</p>
+                @if (TempData["OtpMessage"] is string message)
+                {
+                    <div class="notice success">@message</div>
+                }
+                @if (TempData["OtpError"] is string error)
+                {
+                    <div class="notice danger">@error</div>
+                }
+                <div class="auth-validation" asp-validation-summary="All"></div>
+                <input asp-for="Email" type="hidden" />
+                <input asp-for="Purpose" type="hidden" />
+                <div class="form-group">
+                    <label asp-for="Code">Mã OTP</label>
+                    <input asp-for="Code" class="otp-input" placeholder="12345678" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]{8}" />
+                    <button class="btn btn-primary" type="submit">Xác thực</button>
+                </div>
+            </form>
+
+            <form method="post" action="/gui-lai-otp" class="auth-resend-card">
+                <input type="hidden" name="email" value="@Model.Email" />
+                <input type="hidden" name="purpose" value="@Model.Purpose" />
+                <div>
+                    <strong>Chưa nhận được mã?</strong>
+                    <span>Kiểm tra hộp thư rác trước khi gửi lại.</span>
+                </div>
+                <button class="small-btn neutral" type="submit">Gửi lại OTP</button>
+            </form>
+        </div>
+    </div>
+</section>

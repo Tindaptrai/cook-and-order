@@ -1,0 +1,45 @@
+﻿@model IEnumerable<DACS_Food.Models.Order>
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">🧾 Lịch sử</div>
+        <h1>Lịch sử đơn hàng</h1>
+        <p>Theo dõi các đơn hàng đã đặt tại FoodieTTTM.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (!Model.Any())
+        {
+            <div class="simple-card">
+                <h3>Chưa có đơn hàng</h3>
+                <p>Bạn chưa tạo đơn hàng nào.</p>
+                <a class="btn btn-primary" href="/menu">Khám phá menu</a>
+            </div>
+        }
+        @foreach (var order in Model)
+        {
+            <div class="simple-card">
+                <h3>@order.OrderCode</h3>
+                <p>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                <p><strong>Trạng thái đơn:</strong> @order.OrderStatus</p>
+                <p><strong>Thanh toán:</strong> @order.PaymentMethod - @order.PaymentStatus</p>
+                <p><strong>Tổng tiền:</strong> @order.TotalAmount.ToString("N0")đ</p>
+                <div class="cart-list">
+                    @foreach (var item in order.Items)
+                    {
+                        <div class="cart-item">
+                            <span>@item.FoodName x @item.Quantity</span>
+                            <strong>@item.LineTotal.ToString("N0")đ</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</section>
+

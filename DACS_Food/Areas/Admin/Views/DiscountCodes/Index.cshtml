@@ -1,0 +1,144 @@
+﻿@model IEnumerable<DACS_Food.Models.DiscountCode>
+@using DACS_Food.Models
+@{
+    ViewData["Title"] = "Mã giảm giá";
+
+    string TypeText(DiscountType type) => type == DiscountType.Percent ? "Giảm theo %" : "Giảm số tiền";
+    string ScopeText(DiscountScope scope) => scope switch
+    {
+        DiscountScope.Manual => "Nhập tay",
+        DiscountScope.GoldenHour => "Giờ vàng",
+        DiscountScope.Loyalty => "Thành viên thân thiết",
+        _ => scope.ToString()
+    };
+    string DateValue(DateTime? value) => value?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
+    string LoyaltyText(string? level) => string.IsNullOrWhiteSpace(level) ? "Không giới hạn hạng" : $"Từ hạng {level}";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý mã giảm giá</h1>
+        <p>Tạo mã giảm theo phần trăm hoặc số tiền, giới hạn thời gian áp dụng và số lượt sử dụng.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (TempData["DiscountMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+        @if (TempData["DiscountError"] is string error)
+        {
+            <div class="notice danger">@error</div>
+        }
+
+        <div class="checkout-layout admin-discount-layout">
+            <form class="checkout-card light" method="post" action="/admin/ma-giam-gia">
+                <h3>Tạo mã giảm giá</h3>
+                <p>Ví dụ: giảm 10%, áp dụng từ ngày bắt đầu đến ngày kết thúc, giới hạn 100 lượt dùng.</p>
+                <div class="form-group">
+                    <input name="code" placeholder="Mã giảm giá, ví dụ: SALE10" required />
+                    <input name="name" placeholder="Tên chương trình" required />
+                    <select name="discountType">
+                        <option value="Percent">Giảm theo phần trăm (%)</option>
+                        <option value="FixedAmount">Giảm số tiền cố định</option>
+                    </select>
+                    <input name="discountValue" type="number" min="1" step="0.01" placeholder="Giá trị giảm: 10 hoặc 50000" required />
+                    <input name="minOrderAmount" type="number" min="0" step="1000" value="0" placeholder="Đơn tối thiểu" />
+                    <input name="maxDiscountAmount" type="number" min="0" step="1000" placeholder="Giảm tối đa nếu là %" />
+                    <input name="usageLimit" type="number" min="1" placeholder="Giới hạn lượt sử dụng" />
+                    <select name="discountScope">
+                        <option value="Manual">Nhập tay</option>
+                        <option value="GoldenHour">Giờ vàng</option>
+                        <option value="Loyalty">Thành viên thân thiết</option>
+                    </select>
+                    <select name="requiredLoyaltyLevel">
+                        <option value="">Không giới hạn hạng</option>
+                        <option value="Thành viên">Từ Thành viên</option>
+                        <option value="Bạc">Từ Bạc</option>
+                        <option value="Vàng">Từ Vàng</option>
+                        <option value="Bạch kim">Chỉ Bạch kim trở lên</option>
+                    </select>
+                    <label>Bắt đầu áp dụng</label>
+                    <input name="startAt" type="datetime-local" />
+                    <label>Hết hạn</label>
+                    <input name="endAt" type="datetime-local" />
+                    <label class="inline-check"><input name="isActive" type="checkbox" value="true" checked /> Đang kích hoạt</label>
+                    <button class="btn btn-primary" type="submit">Tạo mã</button>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Lưu ý nghiệp vụ</h3>
+                <div class="policy-list">
+                    <p>Mã giảm theo % nên nhập thêm mức giảm tối đa để tránh giảm quá lớn.</p>
+                    <p>Thời gian bắt đầu/kết thúc là thời gian hiệu lực của mã.</p>
+                    <p>Giới hạn lượt sử dụng được kiểm tra theo tổng số lần mã đã dùng.</p>
+                    <p>Mã giờ vàng chỉ áp dụng trong khung 10:30-12:30 và 16:00-18:00.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-table-wrap discount-table-wrap">
+            <table class="admin-table operations-table">
+                <thead>
+                    <tr>
+                        <th>Mã</th>
+                        <th>Kiểu giảm</th>
+                        <th>Điều kiện</th>
+                        <th>Thời gian áp dụng</th>
+                        <th>Lượt dùng</th>
+                        <th>Trạng thái</th>
+                        <th>Cập nhật nhanh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var code in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@code.Code</strong>
+                                <small>@code.Name</small>
+                                <small>@ScopeText(code.DiscountScope)</small>
+                                <small>@LoyaltyText(code.RequiredLoyaltyLevel)</small>
+                            </td>
+                            <td>
+                                <strong>@TypeText(code.DiscountType)</strong>
+                                <small>@code.DiscountValue.ToString("N0")@(code.DiscountType == DiscountType.Percent ? "%" : "đ")</small>
+                            </td>
+                            <td>
+                                <small>Đơn tối thiểu: @code.MinOrderAmount.ToString("N0")đ</small>
+                                <small>Giảm tối đa: @(code.MaxDiscountAmount.HasValue ? code.MaxDiscountAmount.Value.ToString("N0") + "đ" : "Không giới hạn")</small>
+                            </td>
+                            <td>
+                                <small>Từ: @(code.StartAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Không giới hạn")</small>
+                                <small>Đến: @(code.EndAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Không giới hạn")</small>
+                            </td>
+                            <td>@code.UsedCount / @(code.UsageLimit?.ToString() ?? "Không giới hạn")</td>
+                            <td><span class="badge-soft @(code.IsActive ? "badge-done" : "badge-cancel")">@(code.IsActive ? "Đang bật" : "Đã tắt")</span></td>
+                            <td>
+                                <form class="table-admin-form" method="post" action="/admin/ma-giam-gia/cap-nhat">
+                                    <input type="hidden" name="id" value="@code.Id" />
+                                    <label class="inline-check"><input name="isActive" type="checkbox" value="true" checked="@code.IsActive" /> Kích hoạt</label>
+                                    <input name="usageLimit" type="number" min="1" value="@code.UsageLimit" placeholder="Giới hạn lượt" />
+                                    <select name="requiredLoyaltyLevel">
+                                        <option value="" selected="@string.IsNullOrWhiteSpace(code.RequiredLoyaltyLevel)">Không giới hạn hạng</option>
+                                        <option value="Thành viên" selected="@(code.RequiredLoyaltyLevel == "Thành viên")">Từ Thành viên</option>
+                                        <option value="Bạc" selected="@(code.RequiredLoyaltyLevel == "Bạc")">Từ Bạc</option>
+                                        <option value="Vàng" selected="@(code.RequiredLoyaltyLevel == "Vàng")">Từ Vàng</option>
+                                        <option value="Bạch kim" selected="@(code.RequiredLoyaltyLevel == "Bạch kim")">Từ Bạch kim</option>
+                                    </select>
+                                    <input name="startAt" type="datetime-local" value="@DateValue(code.StartAt)" />
+                                    <input name="endAt" type="datetime-local" value="@DateValue(code.EndAt)" />
+                                    <button class="small-btn" type="submit">Lưu</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

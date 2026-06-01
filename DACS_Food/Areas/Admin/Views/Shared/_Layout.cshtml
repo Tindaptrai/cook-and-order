@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin FoodieLab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/assets/css/style.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="header admin-header">
+        <div class="container navbar">
+            <a class="logo-box" href="/admin">
+                <div class="logo-circle">A</div>
+                <div class="logo-text">
+                    <h2>FoodieLab Admin</h2>
+                    <span>Quản trị hệ thống</span>
+                </div>
+            </a>
+            <nav class="nav-links">
+                <a href="/admin/trung-tam-xu-ly">Trung tâm xử lý</a>
+                <a href="/admin/mon-an">Món ăn</a>
+                <a href="/admin/don-hang">Đơn hàng</a>
+                <a href="/admin/nguoi-dung">Người dùng</a>
+                <a href="/admin/ban">Bàn & đặt bàn</a>
+                <a href="/admin/ma-giam-gia">Mã giảm giá</a>
+            </nav>
+            <form class="admin-logout-form" method="post" action="/dang-xuat">
+                <button class="btn btn-dark admin-logout-btn" type="submit">Đăng xuất</button>
+            </form>
+        </div>
+    </header>
+    <main>@RenderBody()</main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

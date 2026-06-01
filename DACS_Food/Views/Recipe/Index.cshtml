@@ -1,0 +1,95 @@
+﻿@{
+    ViewData["Title"] = "Công thức nấu ăn";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/css/recipes.css" asp-append-version="true" />
+}
+
+<section class="recipes-hero">
+    <div class="container recipes-hero-inner">
+        <div>
+            <p class="section-eyebrow">FoodieTTTM recipes</p>
+            <h1>Công thức nấu ăn đơn giản tại nhà</h1>
+        </div>
+    </div>
+</section>
+
+<section class="recipes-section" id="recipesCatalog">
+    <div class="container">
+        <div class="recipes-toolbar">
+            <div>
+                <h2>Danh sách công thức</h2>
+                <p id="recipeResultText">Mỗi trang hiển thị 4 công thức.</p>
+            </div>
+            <div class="recipe-filter-buttons" aria-label="Lọc công thức">
+                <button class="active" type="button" data-category="all">Tất cả</button>
+                <button type="button" data-category="mon-man">Món mặn</button>
+                <button type="button" data-category="mon-chay">Món chay</button>
+                <button type="button" data-category="healthy">Healthy</button>
+                <button type="button" data-category="do-uong">Đồ uống</button>
+                <button type="button" data-category="mon-nhanh">Món nhanh</button>
+            </div>
+        </div>
+
+        <div class="recipes-grid" id="recipesGrid"></div>
+
+        <nav class="recipe-pagination" aria-label="Phân trang công thức">
+            <button type="button" id="recipePrevBtn">Trước</button>
+            <button type="button" data-page="1" class="active">Trang 1</button>
+            <button type="button" data-page="2">Trang 2</button>
+            <button type="button" data-page="3">Trang 3</button>
+            <button type="button" data-page="4">Trang 4</button>
+            <button type="button" id="recipeNextBtn">Sau</button>
+        </nav>
+
+        <div class="recipes-safety-note">
+            <h2>Lưu ý an toàn thực phẩm</h2>
+            <p>Luôn rửa tay trước khi nấu, rửa sạch nguyên liệu, nấu chín kỹ thịt/cá/trứng/hải sản và không sử dụng thực phẩm có dấu hiệu ôi thiu. Nếu quý khách dị ứng với trứng, sữa, hải sản, đậu nành, gluten, đậu phộng hoặc các thành phần khác, hãy kiểm tra kỹ nguyên liệu trước khi nấu hoặc chọn công thức khác.</p>
+        </div>
+    </div>
+</section>
+
+<div class="recipe-modal" id="recipeModal" aria-hidden="true">
+    <div class="recipe-modal-backdrop" onclick="closeRecipeModal()"></div>
+    <article class="recipe-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="recipeModalName">
+        <button class="recipe-modal-close" type="button" onclick="closeRecipeModal()" aria-label="Đóng">×</button>
+        <div class="recipe-modal-image">
+            <img id="recipeModalImage" src="" alt="" />
+            <span id="recipeModalCategory"></span>
+        </div>
+        <div class="recipe-modal-content">
+            <p class="section-eyebrow" id="recipeModalDifficulty"></p>
+            <h2 id="recipeModalName"></h2>
+            <p id="recipeModalDesc"></p>
+            <div class="recipe-modal-meta">
+                <span id="recipeModalPrep"></span>
+                <span id="recipeModalCook"></span>
+                <span id="recipeModalServings"></span>
+            </div>
+            <div class="recipe-modal-block">
+                <h3>Nguyên liệu</h3>
+                <ul id="recipeModalIngredients"></ul>
+            </div>
+            <div class="recipe-modal-block">
+                <h3>Các bước thực hiện</h3>
+                <ol id="recipeModalSteps"></ol>
+            </div>
+            <div class="recipe-modal-tip">
+                <h3>Mẹo nhỏ</h3>
+                <p id="recipeModalTips"></p>
+            </div>
+            <div class="recipe-modal-safety">
+                <h3>An toàn thực phẩm</h3>
+                <p id="recipeModalSafety"></p>
+                <h3>Ghi chú dị ứng</h3>
+                <p id="recipeModalAllergy"></p>
+            </div>
+        </div>
+    </article>
+</div>
+
+@section Scripts {
+    <script src="~/assets/js/recipes.js" asp-append-version="true"></script>
+}
+

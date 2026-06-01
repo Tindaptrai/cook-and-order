@@ -1,0 +1,116 @@
+@model DACS_Food.ViewModels.OrderTrackingViewModel
+@using DACS_Food.Models
+@using DACS_Food.Services
+@{
+    ViewData["Title"] = "Tra cứu đơn hàng";
+
+    string MaskAddress(string address)
+    {
+        if (string.IsNullOrWhiteSpace(address)) return "Đã ẩn";
+        var parts = address.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2) return string.Join(", ", parts.TakeLast(2));
+        return address.Length <= 8 ? "Đã ẩn" : $"{address[..Math.Min(8, address.Length)]}...";
+    }
+
+    bool IsReached(OrderStatus status, OrderStatus step)
+    {
+        var rank = status switch
+        {
+            OrderStatus.Pending or OrderStatus.New => 1,
+            OrderStatus.Confirmed => 2,
+            OrderStatus.Preparing => 3,
+            OrderStatus.ReadyForDelivery => 4,
+            OrderStatus.Delivering => 5,
+            OrderStatus.Delivered or OrderStatus.Completed => 6,
+            _ => 0
+        };
+        var stepRank = step switch
+        {
+            OrderStatus.Pending or OrderStatus.New => 1,
+            OrderStatus.Confirmed => 2,
+            OrderStatus.Preparing => 3,
+            OrderStatus.ReadyForDelivery => 4,
+            OrderStatus.Delivering => 5,
+            OrderStatus.Delivered or OrderStatus.Completed => 6,
+            _ => 0
+        };
+        return rank >= stepRank;
+    }
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Tra cứu</div>
+        <h1>Tra cứu đơn hàng online</h1>
+        @if (Model.IsAccountLookup)
+        {
+            <p>Bạn đang đăng nhập nên FoodieTTTM hiển thị trực tiếp các đơn hàng thuộc tài khoản của bạn.</p>
+        }
+        else
+        {
+            <p>Nhập mã đơn hàng hoặc số điện thoại đã dùng khi đặt món để xem trạng thái giao hàng.</p>
+        }
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        <form class="tracking-form simple-card" method="post" action="/tra-cuu-don-hang">
+            <div class="form-group">
+                <input name="OrderCode" value="@Model.OrderCode" placeholder="Mã đơn hàng" />
+                <input name="Phone" value="@Model.Phone" placeholder="Hoặc số điện thoại" />
+                <button class="btn btn-primary" type="submit">Tra cứu</button>
+            </div>
+            @if (Model.IsAccountLookup)
+            {
+                <p class="muted-text">Muốn kiểm tra đơn khác? Bạn vẫn có thể nhập mã đơn hàng hoặc số điện thoại ở trên.</p>
+            }
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div class="notice danger">@Model.Message</div>
+        }
+
+        <div class="tracking-results">
+            @foreach (var order in Model.Orders)
+            {
+                <div class="simple-card tracking-card">
+                    <div class="tracking-head">
+                        <div>
+                            <h3>@order.OrderCode</h3>
+                            <p>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                        <span class="badge-soft badge-delivery">@OrderService.GetOrderStatusLabel(order.OrderStatus)</span>
+                    </div>
+
+                    <div class="tracking-meta">
+                        <p><strong>Giao hàng:</strong> @OrderService.GetDeliveryStatusLabel(order.DeliveryStatus)</p>
+                        <p><strong>Tổng tiền:</strong> @order.TotalAmount.ToString("N0")đ</p>
+                        <p><strong>Thanh toán:</strong> @order.PaymentMethod</p>
+                        <p><strong>Địa chỉ:</strong> @MaskAddress(order.Address)</p>
+                    </div>
+
+                    <div class="status-timeline">
+                        <div class="timeline-step @(IsReached(order.OrderStatus, OrderStatus.Pending) ? "active" : "")"><strong>Đã đặt hàng</strong><span>FoodieTTTM đã nhận đơn.</span></div>
+                        <div class="timeline-step @(IsReached(order.OrderStatus, OrderStatus.Confirmed) ? "active" : "")"><strong>Đã xác nhận</strong><span>Nhân viên xác nhận thông tin.</span></div>
+                        <div class="timeline-step @(IsReached(order.OrderStatus, OrderStatus.Preparing) ? "active" : "")"><strong>Đang chuẩn bị</strong><span>Bếp đang làm món.</span></div>
+                        <div class="timeline-step @(IsReached(order.OrderStatus, OrderStatus.ReadyForDelivery) ? "active" : "")"><strong>Chờ giao hàng</strong><span>Món đã chuẩn bị xong.</span></div>
+                        <div class="timeline-step @(IsReached(order.OrderStatus, OrderStatus.Delivering) ? "active" : "")"><strong>Đang giao hàng</strong><span>Shipper đang giao đến khách.</span></div>
+                        <div class="timeline-step @(IsReached(order.OrderStatus, OrderStatus.Completed) ? "active" : "")"><strong>Đã giao thành công</strong><span>Đơn hàng hoàn tất.</span></div>
+                    </div>
+
+                    <div class="cart-list">
+                        @foreach (var item in order.Items)
+                        {
+                            <div class="cart-item">
+                                <span>@item.FoodName</span>
+                                <strong>x @item.Quantity</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

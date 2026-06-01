@@ -1,0 +1,8 @@
+TAI KHOAN ADMIN FOODIELAB
+
+Email: admin@foodielab.local
+Mat khau: Admin@123
+
+Ghi chu:
+- Tai khoan nay duoc seed tu dong khi ung dung khoi dong lan dau.
+- Neu database da co san nhung khong dang nhap duoc, hay bao Codex kiem tra lai seed admin trong LocalDB.

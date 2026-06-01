@@ -1,0 +1,4 @@
+@model IEnumerable<DACS_Food.Models.FoodItem>
+@{ ViewData["Title"] = "Món ăn"; }
+<section class="page-hero"><div class="container"><div class="badge">Admin</div><h1>Quản lý món ăn</h1><p>@Model.Count() món trong hệ thống.</p></div></section>
+<section class="section section-light"><div class="container food-grid">@foreach (var item in Model) { <div class="simple-card"><h3>@item.Name</h3><p>@item.FoodCategory?.Name</p><strong>@item.Price.ToString("N0")đ</strong></div> }</div></section>

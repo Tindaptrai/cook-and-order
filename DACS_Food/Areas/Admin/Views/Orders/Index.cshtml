@@ -1,0 +1,301 @@
+@model IEnumerable<DACS_Food.Models.Order>
+@using DACS_Food.Models
+@using DACS_Food.Services
+@{
+    ViewData["Title"] = "Đơn hàng";
+
+    string BadgeClass(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending or OrderStatus.New => "badge-soft badge-waiting",
+        OrderStatus.Confirmed or OrderStatus.Preparing or OrderStatus.ReadyForDelivery => "badge-soft badge-progress",
+        OrderStatus.Delivering => "badge-soft badge-delivery",
+        OrderStatus.Delivered or OrderStatus.Completed => "badge-soft badge-done",
+        OrderStatus.Cancelled => "badge-soft badge-cancel",
+        _ => "badge-soft"
+    };
+
+    OrderStatus? NextStatus(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending or OrderStatus.New => OrderStatus.Confirmed,
+        OrderStatus.Confirmed => OrderStatus.Preparing,
+        OrderStatus.Preparing => OrderStatus.ReadyForDelivery,
+        OrderStatus.ReadyForDelivery => OrderStatus.Delivering,
+        OrderStatus.Delivering => OrderStatus.Completed,
+        _ => null
+    };
+
+    string NextLabel(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending or OrderStatus.New => "Xác nhận đơn",
+        OrderStatus.Confirmed => "Bắt đầu chuẩn bị",
+        OrderStatus.Preparing => "Đã chuẩn bị xong",
+        OrderStatus.ReadyForDelivery => "Bắt đầu giao hàng",
+        OrderStatus.Delivering => "Xác nhận đã giao",
+        _ => ""
+    };
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý đơn hàng & vận đơn</h1>
+        <p>Theo dõi đơn online từ lúc chờ xác nhận đến khi giao thành công.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container admin-wide-container">
+        @if (TempData["AdminOrderMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+        @if (TempData["AdminOrderError"] is string error)
+        {
+            <div class="notice danger">@error</div>
+        }
+
+        <div class="admin-toolbar">
+            <a class="btn btn-primary" href="/admin/don-hang/xac-nhan-giao-hang">Nhập mã xác nhận giao hàng</a>
+        </div>
+
+        <div class="admin-table-wrap admin-orders-table-wrap">
+            <table class="admin-table admin-orders-table">
+                <thead>
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Địa chỉ</th>
+                        <th>Tổng tiền</th>
+                        <th>Thanh toán</th>
+                        <th>Trạng thái</th>
+                        <th>Giao hàng</th>
+                        <th>Thời gian đặt</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        var next = NextStatus(order.OrderStatus);
+                        <tr>
+                            <td>
+                                <strong>@order.OrderCode</strong>
+                                <small>@(order.Shipment?.ShipmentCode ?? order.TrackingCode)</small>
+                            </td>
+                            <td>
+                                <strong>@order.CustomerName</strong>
+                                <small>@order.PhoneNumber</small>
+                            </td>
+                            <td class="admin-address-cell">@order.Address</td>
+                            <td>@order.TotalAmount.ToString("N0")đ</td>
+                            <td>@order.PaymentMethod / @order.PaymentStatus</td>
+                            <td><span class="@BadgeClass(order.OrderStatus)">@OrderService.GetOrderStatusLabel(order.OrderStatus)</span></td>
+                            <td><span class="badge-soft badge-delivery">@OrderService.GetDeliveryStatusLabel(order.DeliveryStatus)</span></td>
+                            <td>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="small-btn neutral" href="/admin/don-hang/@order.Id">Chi tiết</a>
+                                    @if (next.HasValue)
+                                    {
+                                        <form method="post" action="/admin/don-hang/status">
+                                            <input type="hidden" name="id" value="@order.Id" />
+                                            <input type="hidden" name="status" value="@next.Value" />
+                                            <button class="small-btn" type="submit">@NextLabel(order.OrderStatus)</button>
+                                        </form>
+                                    }
+                                    @if (order.OrderStatus != OrderStatus.Cancelled && order.OrderStatus != OrderStatus.Completed)
+                                    {
+                                        <form method="post" action="/admin/don-hang/status">
+                                            <input type="hidden" name="id" value="@order.Id" />
+                                            <input type="hidden" name="status" value="Cancelled" />
+                                            <button class="small-btn danger" type="submit">Hủy đơn</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@*
+@{
+    ViewData["Title"] = "Đơn hàng";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý đơn hàng & vận đơn</h1>
+        <p>@Model.Count() đơn hàng. Đơn mới sau khi khách checkout sẽ nằm tại trang này.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        <div class="simple-card" style="margin-bottom: 18px;">
+            <h3>Bộ lọc đơn hàng</h3>
+            <p class="muted-text">Admin xem đơn, mã vận đơn, thông tin giao hàng và cập nhật shipper tại đây.</p>
+            <select id="adminOrderStatusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="New">Đơn mới</option>
+                <option value="Confirmed">Đã xác nhận</option>
+                <option value="Preparing">Đang chuẩn bị</option>
+                <option value="Completed">Hoàn thành</option>
+                <option value="Cancelled">Đã hủy</option>
+            </select>
+        </div>
+
+        <div id="adminOrdersList">
+            @foreach (var order in Model)
+            {
+                <div class="simple-card">
+                    <h3>@order.OrderCode</h3>
+                    <p>@order.CustomerName - @order.TotalAmount.ToString("N0")đ - @order.OrderStatus</p>
+                    <p>Mã vận đơn: @(string.IsNullOrWhiteSpace(order.TrackingCode) ? "Chưa có" : order.TrackingCode)</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<script>
+    const adminOrderStatusOptions = [
+        ['New', 'Đơn mới'],
+        ['Confirmed', 'Đã xác nhận'],
+        ['Preparing', 'Đang chuẩn bị'],
+        ['Completed', 'Hoàn thành'],
+        ['Cancelled', 'Đã hủy']
+    ];
+
+    const adminDeliveryStatusOptions = [
+        ['Pending', 'Chờ xử lý'],
+        ['AssigningShipper', 'Đang phân shipper'],
+        ['Shipping', 'Đang giao'],
+        ['Delivered', 'Đã giao'],
+        ['Failed', 'Giao thất bại'],
+        ['Cancelled', 'Đã hủy']
+    ];
+
+    const formatAdminOrderMoney = value => `${Number(value || 0).toLocaleString('vi-VN')}đ`;
+    const escapeAdminHtml = value => String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+
+    function adminOrderStatusSelect(order) {
+        return `
+            <select data-order-status="${order.id}">
+                ${adminOrderStatusOptions.map(([value, label]) => `<option value="${value}" ${order.orderStatus === value ? 'selected' : ''}>${label}</option>`).join('')}
+            </select>
+        `;
+    }
+
+    function adminDeliveryStatusSelect(order) {
+        return `
+            <select data-delivery-status="${order.id}">
+                ${adminDeliveryStatusOptions.map(([value, label]) => `<option value="${value}" ${order.deliveryStatus === value ? 'selected' : ''}>${label}</option>`).join('')}
+            </select>
+        `;
+    }
+
+    function adminOrderTemplate(order) {
+        const items = Array.isArray(order.items) ? order.items : [];
+        return `
+            <div class="simple-card">
+                <h3>${escapeAdminHtml(order.orderCode)}</h3>
+                <p><strong>${escapeAdminHtml(order.customerName)}</strong> - ${escapeAdminHtml(order.phoneNumber || '')}</p>
+                <p>${escapeAdminHtml(order.address || 'Không có địa chỉ')}</p>
+                <p>Tổng tiền: <strong>${formatAdminOrderMoney(order.totalAmount)}</strong> - Thanh toán: ${escapeAdminHtml(order.paymentMethod)} / ${escapeAdminHtml(order.paymentStatus)}</p>
+                <p>Món: ${items.length ? items.map(item => `${escapeAdminHtml(item.foodName)} x${item.quantity}`).join(', ') : `${order.itemCount || 0} món`}</p>
+                <p><strong>Mã vận đơn:</strong> ${escapeAdminHtml(order.trackingCode || 'Chưa có')} - <strong>Vận chuyển:</strong> ${escapeAdminHtml(order.deliveryStatus || 'Pending')}</p>
+                <div class="form-group" style="max-width: 520px;">
+                    <label>Trạng thái đơn hàng</label>
+                    ${adminOrderStatusSelect(order)}
+                    <label>Trạng thái vận đơn</label>
+                    ${adminDeliveryStatusSelect(order)}
+                    <input data-shipper-name="${order.id}" value="${escapeAdminHtml(order.shipperName || '')}" placeholder="Tên shipper / nhân viên giao hàng" />
+                    <input data-shipper-phone="${order.id}" value="${escapeAdminHtml(order.shipperPhone || '')}" placeholder="Số điện thoại shipper" />
+                    <textarea data-delivery-note="${order.id}" rows="2" placeholder="Ghi chú vận đơn">${escapeAdminHtml(order.deliveryNote || '')}</textarea>
+                    <button class="btn btn-primary" type="button" data-save-delivery="${order.id}">Lưu vận đơn</button>
+                </div>
+            </div>
+        `;
+    }
+
+    async function loadAdminOrders() {
+        const root = document.getElementById('adminOrdersList');
+        const filter = document.getElementById('adminOrderStatusFilter');
+        if (!root) return;
+
+        root.innerHTML = '<p class="muted-text">Đang tải đơn hàng...</p>';
+        const status = filter?.value ? `?status=${encodeURIComponent(filter.value)}` : '';
+        const response = await fetch(`/api/admin/orders${status}`, { headers: { Accept: 'application/json' } });
+        if (!response.ok) {
+            root.innerHTML = '<p class="muted-text">Không tải được đơn hàng. Vui lòng kiểm tra quyền admin.</p>';
+            return;
+        }
+
+        const data = await response.json();
+        const orders = Array.isArray(data.items) ? data.items : [];
+        root.innerHTML = orders.length ? orders.map(adminOrderTemplate).join('') : '<p class="muted-text">Chưa có đơn hàng phù hợp.</p>';
+    }
+
+    async function updateOrderStatus(select) {
+        const orderId = select.dataset.orderStatus;
+        const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ status: select.value })
+        });
+
+        if (!response.ok) {
+            alert('Không cập nhật được trạng thái đơn hàng.');
+            loadAdminOrders();
+        }
+    }
+
+    async function updateDelivery(button) {
+        const orderId = button.dataset.saveDelivery;
+        const payload = {
+            deliveryStatus: document.querySelector(`[data-delivery-status="${orderId}"]`)?.value || 'Pending',
+            shipperName: document.querySelector(`[data-shipper-name="${orderId}"]`)?.value || '',
+            shipperPhone: document.querySelector(`[data-shipper-phone="${orderId}"]`)?.value || '',
+            deliveryNote: document.querySelector(`[data-delivery-note="${orderId}"]`)?.value || ''
+        };
+
+        const response = await fetch(`/api/admin/orders/${orderId}/delivery`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            alert('Không cập nhật được vận đơn.');
+            return;
+        }
+
+        loadAdminOrders();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('adminOrderStatusFilter')?.addEventListener('change', loadAdminOrders);
+        loadAdminOrders();
+
+        document.getElementById('adminOrdersList')?.addEventListener('change', event => {
+            const select = event.target.closest('[data-order-status]');
+            if (select) updateOrderStatus(select);
+        });
+
+        document.getElementById('adminOrdersList')?.addEventListener('click', event => {
+            const button = event.target.closest('[data-save-delivery]');
+            if (button) updateDelivery(button);
+        });
+    });
+</script>
+*@

@@ -1,0 +1,80 @@
+@model DACS_Food.Models.Order
+@using DACS_Food.Models
+@using DACS_Food.Services
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng";
+    var shipment = Model.Shipment;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Chi tiết đơn @Model.OrderCode</h1>
+        <p>@OrderService.GetOrderStatusLabel(Model.OrderStatus) - @OrderService.GetDeliveryStatusLabel(Model.DeliveryStatus)</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container detail-layout">
+        <div class="simple-card">
+            <h3>Thông tin khách hàng</h3>
+            <p><strong>Khách:</strong> @Model.CustomerName</p>
+            <p><strong>Số điện thoại:</strong> @Model.PhoneNumber</p>
+            <p><strong>Địa chỉ:</strong> @Model.Address</p>
+            <p><strong>Thanh toán:</strong> @Model.PaymentMethod / @Model.PaymentStatus</p>
+            <p><strong>Tổng tiền:</strong> @Model.TotalAmount.ToString("N0")đ</p>
+        </div>
+
+        <div class="simple-card">
+            <h3>Vận đơn giao hàng</h3>
+            <p><strong>Mã vận đơn:</strong> @(shipment?.ShipmentCode ?? Model.TrackingCode)</p>
+            <p><strong>Trạng thái giao:</strong> @OrderService.GetDeliveryStatusLabel(Model.DeliveryStatus)</p>
+            <p><strong>Shipper:</strong> @(shipment?.ShipperName ?? Model.ShipperName) - @(shipment?.ShipperPhone ?? Model.ShipperPhone)</p>
+            <p><strong>Bắt đầu giao:</strong> @((shipment?.DeliveryStartedAt ?? Model.ShippedAt)?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</p>
+            <p><strong>Giao thành công:</strong> @((shipment?.DeliveredAt ?? Model.DeliveredAt)?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</p>
+            <p><strong>Cập nhật gần nhất:</strong> @((shipment?.UpdatedAt ?? Model.UpdatedAt).ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</p>
+
+            <form class="form-group" method="post" action="/admin/don-hang/delivery">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <select name="deliveryStatus">
+                    <option value="Pending" selected="@(Model.DeliveryStatus == DeliveryStatus.Pending)">Chờ xử lý</option>
+                    <option value="ReadyForDelivery" selected="@(Model.DeliveryStatus == DeliveryStatus.ReadyForDelivery)">Chờ giao hàng</option>
+                    <option value="Delivering" selected="@(Model.DeliveryStatus == DeliveryStatus.Delivering)">Đang giao hàng</option>
+                    <option value="Delivered" selected="@(Model.DeliveryStatus == DeliveryStatus.Delivered)">Đã giao thành công</option>
+                    <option value="Cancelled" selected="@(Model.DeliveryStatus == DeliveryStatus.Cancelled)">Đã hủy</option>
+                </select>
+                <input name="shipperName" value="@(shipment?.ShipperName ?? Model.ShipperName)" placeholder="Tên shipper / người giao hàng" />
+                <input name="shipperPhone" value="@(shipment?.ShipperPhone ?? Model.ShipperPhone)" placeholder="Số điện thoại shipper" />
+                <textarea name="deliveryNote" rows="3" placeholder="Ghi chú giao hàng">@(shipment?.DeliveryNote ?? Model.DeliveryNote)</textarea>
+                <button class="btn btn-primary" type="submit">Lưu vận đơn</button>
+            </form>
+        </div>
+
+        <div class="simple-card">
+            <h3>Món đã đặt</h3>
+            <div class="cart-list">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="cart-item">
+                        <span>@item.FoodName x @item.Quantity</span>
+                        <strong>@item.LineTotal.ToString("N0")đ</strong>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="simple-card">
+            <h3>Lịch sử cập nhật</h3>
+            <div class="status-timeline compact">
+                @foreach (var history in Model.StatusHistories.OrderByDescending(x => x.CreatedAt))
+                {
+                    <div class="timeline-step active">
+                        <strong>@OrderService.GetOrderStatusLabel(history.OrderStatus)</strong>
+                        <span>@history.Note</span>
+                        <small>@history.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") - @history.UpdatedBy</small>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,240 @@
+﻿@model DACS_Food.ViewModels.TablePageViewModel
+@{
+    ViewData["Title"] = "Đặt bàn & Không gian";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">🪑 Đặt bàn & Không gian</div>
+        <h1>Không gian bàn tại FoodieTTTM</h1>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (TempData["TableMessage"] is string message)
+        {
+            <p class="table-notice">@message</p>
+        }
+
+        <div class="section-head">
+            <div class="section-title">
+                <div class="badge">Tình trạng hiện tại</div>
+                <h2>Bàn tại quán</h2>
+                <p>Trạng thái chỉ hiển thị công khai là Còn trống hoặc Đang bận.</p>
+            </div>
+        </div>
+
+        <div class="table-grid">
+            @foreach (var table in Model.Tables)
+            {
+                <div class="table-card @(table.IsBusy ? "occupied" : "")">
+                    <h3>Bàn @table.TableNumber</h3>
+                    <p>Loại bàn: @(table.TableType == DACS_Food.Models.TableType.Private ? "Private" : "Thường")</p>
+                    <p>Sức chứa: @table.Capacity người</p>
+                    <span class="status">@(table.IsBusy ? "Đang bận" : "Còn trống")</span>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@if (!User.IsInRole("Admin"))
+{
+    <section class="section section-soft">
+        <div class="container checkout-layout">
+            <form class="checkout-card light" id="publicReservationForm" method="post" action="/ban/dat-ban">
+                <h3>Gửi yêu cầu đặt bàn</h3>
+                <p>Thông tin này chỉ dùng để nhân viên FoodieTTTM gọi lại xác nhận. Quán không hiển thị thông tin cá nhân của bạn cho khách khác.</p>
+                <div class="form-group">
+                    <input id="publicReservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    <select id="publicTableId" name="TableId" required>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id">Bàn @table.TableNumber - @(table.TableType == DACS_Food.Models.TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
+                        }
+                    </select>
+                    <select id="publicTimeSlot" name="TimeSlot" required hidden>
+                        <option value="">Chọn ngày và bàn để tải khung giờ</option>
+                    </select>
+                    <input name="CustomerName" placeholder="Họ tên của bạn" required />
+                    <input name="PhoneNumber" placeholder="Số điện thoại để nhân viên xác nhận" required />
+                    <textarea name="Note" rows="3" placeholder="Ghi chú nếu có"></textarea>
+                    <input type="hidden" name="Status" value="@DACS_Food.Models.ReservationStatus.Pending" />
+                    <p class="reservation-feedback" id="publicReservationFeedback" aria-live="polite" hidden></p>
+                    <button class="btn btn-primary" type="submit">Gửi yêu cầu đặt bàn</button>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Sau khi gửi yêu cầu</h3>
+                <p>Nhân viên FoodieTTTM sẽ gọi lại trong ít phút để xác nhận bàn, thời gian và số điện thoại của bạn. Quán nhận đặt bàn từ 08:30 đến 21:00.</p>
+                <div class="policy-list">
+                    <p>Nếu cần đổi giờ hoặc đổi bàn, bạn có thể trao đổi trực tiếp khi nhân viên gọi xác nhận.</p>
+                    <p>Yêu cầu đặt bàn ở trạng thái Pending cho đến khi nhân viên xác nhận.</p>
+                    <p>Vui lòng đến đúng giờ đã xác nhận để quán phục vụ tốt hơn.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@if (User.IsInRole("Admin"))
+{
+    <section class="section section-soft">
+        <div class="container checkout-layout">
+            <form class="checkout-card light" method="post" action="/ban/dat-ban">
+                <h3>Admin đặt bàn</h3>
+                <p>Chọn ngày và bàn để hệ thống tải khung giờ 30 phút. Mỗi lượt đặt giữ bàn 90 phút. Quán nhận đặt bàn từ 08:30 đến 21:00.</p>
+                <div class="form-group">
+                    <input id="reservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    <select id="tableId" name="TableId" required>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id">Bàn @table.TableNumber - @(table.TableType == DACS_Food.Models.TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
+                        }
+                    </select>
+                    <select id="timeSlot" name="TimeSlot" required>
+                        <option value="">Chọn ngày và bàn để tải khung giờ</option>
+                    </select>
+                    <input name="CustomerName" placeholder="Tên khách" required />
+                    <input name="PhoneNumber" placeholder="Số điện thoại" required />
+                    <textarea name="Note" rows="3" placeholder="Ghi chú nếu có"></textarea>
+                    <select name="Status">
+                        <option value="@DACS_Food.Models.ReservationStatus.Pending">Pending</option>
+                        <option value="@DACS_Food.Models.ReservationStatus.Confirmed">Confirmed</option>
+                    </select>
+                    <button class="btn btn-primary" type="submit">Tạo lịch đặt bàn</button>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Quy định đặt bàn</h3>
+                <p>FoodieTTTM sẽ giữ bàn theo lịch admin xác nhận. Nếu khách đến trễ hơn 15 phút mà chưa báo lại, quán có thể sắp xếp bàn cho khách khác.</p>
+                <div class="policy-list">
+                    <p>Không mang thức ăn hoặc đồ uống bên ngoài vào quán. Trường hợp đặc biệt như bánh sinh nhật, vui lòng báo trước để được hỗ trợ.</p>
+                    <p>Chỉ lịch Confirmed mới khóa khung giờ 90 phút. Pending chỉ là yêu cầu chờ xác nhận để tránh người lạ spam giữ hết bàn.</p>
+                    <p>Nếu bàn trống sớm, admin chuyển lượt đặt sang Completed để hệ thống mở lịch cho các khung giờ liên quan.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    @section Scripts {
+        <script>
+            async function loadReservationSlots() {
+                const dateInput = document.getElementById('reservationDate');
+                const tableInput = document.getElementById('tableId');
+                const slotInput = document.getElementById('timeSlot');
+                if (!dateInput || !tableInput || !slotInput || !dateInput.value || !tableInput.value) return;
+
+                slotInput.innerHTML = '<option value="">Đang tải khung giờ...</option>';
+                const response = await fetch(`/ban/khung-gio?date=${encodeURIComponent(dateInput.value)}&tableId=${encodeURIComponent(tableInput.value)}`);
+                const slots = await response.json();
+                slotInput.innerHTML = slots.map(slot =>
+                    `<option value="${slot.time}" ${slot.isAvailable ? '' : 'disabled'}>${slot.label}</option>`
+                ).join('');
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const dateInput = document.getElementById('reservationDate');
+                const tableInput = document.getElementById('tableId');
+                if (dateInput) dateInput.addEventListener('change', loadReservationSlots);
+                if (tableInput) tableInput.addEventListener('change', loadReservationSlots);
+                loadReservationSlots();
+            });
+        </script>
+    }
+}
+else
+{
+    @section Scripts {
+        <script>
+            async function loadPublicReservationSlots() {
+                const dateInput = document.getElementById('publicReservationDate');
+                const tableInput = document.getElementById('publicTableId');
+                const slotInput = document.getElementById('publicTimeSlot');
+                if (!dateInput || !tableInput || !slotInput || !dateInput.value || !tableInput.value) return;
+
+                slotInput.hidden = false;
+                slotInput.innerHTML = '<option value="">Đang tải khung giờ...</option>';
+                try {
+                    const response = await fetch(`/api/tables/${encodeURIComponent(tableInput.value)}/slots?date=${encodeURIComponent(dateInput.value)}`);
+                    const slots = await response.json();
+                    slotInput.innerHTML = slots.map(slot =>
+                        `<option value="${slot.time}" ${slot.isAvailable ? '' : 'disabled'}>${slot.label}</option>`
+                    ).join('');
+                } catch {
+                    slotInput.innerHTML = '<option value="">Không tải được khung giờ</option>';
+                }
+            }
+
+            async function submitPublicReservation(event) {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const submitButton = form.querySelector('button[type="submit"]');
+                const feedback = document.getElementById('publicReservationFeedback');
+                const dateInput = document.getElementById('publicReservationDate');
+                const slotInput = document.getElementById('publicTimeSlot');
+                const data = Object.fromEntries(new FormData(form).entries());
+
+                if (submitButton) submitButton.disabled = true;
+                if (feedback) {
+                    feedback.hidden = false;
+                    feedback.classList.remove('success', 'danger');
+                    feedback.textContent = 'Đang gửi yêu cầu đặt bàn...';
+                }
+                try {
+                    const response = await fetch('/api/tables/reservations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            reservationDate: data.ReservationDate,
+                            tableId: Number(data.TableId),
+                            timeSlot: data.TimeSlot,
+                            customerName: data.CustomerName,
+                            phoneNumber: data.PhoneNumber,
+                            note: data.Note || ''
+                        })
+                    });
+                    const result = await response.json();
+                    if (feedback) {
+                        feedback.classList.toggle('success', response.ok);
+                        feedback.classList.toggle('danger', !response.ok);
+                        feedback.textContent = result.message || (response.ok ? 'Đã gửi yêu cầu đặt bàn. Yêu cầu đang chờ nhân viên xác nhận.' : 'Không gửi được yêu cầu đặt bàn.');
+                    }
+                    if (response.ok) {
+                        form.reset();
+                        const today = new Date().toISOString().slice(0, 10);
+                        if (dateInput) dateInput.value = today;
+                        if (slotInput) {
+                            slotInput.hidden = true;
+                            slotInput.innerHTML = '<option value="">Chọn ngày và bàn để tải khung giờ</option>';
+                        }
+                        loadPublicReservationSlots();
+                    }
+                } catch {
+                    if (feedback) {
+                        feedback.hidden = false;
+                        feedback.classList.add('danger');
+                        feedback.textContent = 'Không gửi được yêu cầu đặt bàn. Vui lòng thử lại sau.';
+                    }
+                } finally {
+                    if (submitButton) submitButton.disabled = false;
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementById('publicReservationForm');
+                const dateInput = document.getElementById('publicReservationDate');
+                const tableInput = document.getElementById('publicTableId');
+                if (form) form.addEventListener('submit', submitPublicReservation);
+                if (dateInput) dateInput.addEventListener('change', loadPublicReservationSlots);
+                if (tableInput) tableInput.addEventListener('change', loadPublicReservationSlots);
+                loadPublicReservationSlots();
+            });
+        </script>
+    }
+}
+

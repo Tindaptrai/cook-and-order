@@ -1,0 +1,25 @@
+@model DACS_Food.ViewModels.CartViewModel
+@{
+    ViewData["Title"] = "Giỏ hàng";
+}
+
+<section class="page-hero"><div class="container"><div class="badge">🛒 Giỏ hàng</div><h1>Giỏ hàng của bạn</h1><p>Giỏ hàng server-side theo tài khoản hoặc phiên truy cập.</p></div></section>
+<section class="section section-light">
+    <div class="container">
+        <div class="cart-list">
+            @if (!Model.Items.Any())
+            {
+                <p class="muted-text">Chưa có món nào.</p>
+            }
+            @foreach (var item in Model.Items)
+            {
+                <div class="cart-item">
+                    <span>@item.FoodItem?.Name x @item.Quantity</span>
+                    <strong>@((item.UnitPrice * item.Quantity).ToString("N0"))đ</strong>
+                </div>
+            }
+        </div>
+        <div class="cart-total"><span>Tổng tiền:</span><span>@Model.Subtotal.ToString("N0")đ</span></div>
+        <a class="btn btn-primary" href="/checkout">Thanh toán</a>
+    </div>
+</section>

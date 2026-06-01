@@ -1,0 +1,305 @@
+﻿@using DACS_Food.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentPath = Context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant() ?? "";
+    string IsNavActive(string key)
+    {
+        var isActive = key switch
+        {
+            "home" => currentPath is "" or "/" or "/home" || (currentController == "Home" && currentAction == "Index"),
+            "menu" => currentPath.StartsWith("/menu") || currentPath.StartsWith("/foods") || currentController is "Menu" or "Foods",
+            "recipes" => currentPath.StartsWith("/recipes") || currentPath.StartsWith("/recipe") || currentController is "Recipe" or "Recipes",
+            "food-guide" => currentPath.StartsWith("/food-guide") || currentPath.StartsWith("/choose-food") || currentController == "FoodGuide",
+            "tables" => currentPath.StartsWith("/ban") || currentPath.StartsWith("/tables") || currentPath.StartsWith("/reservations") || currentPath.StartsWith("/booking") || currentController is "Table" or "Tables" or "Reservations" or "Booking",
+            "tracking" => currentPath.StartsWith("/tra-cuu-don-hang") || currentPath.StartsWith("/order-tracking") || currentController is "OrderTracking",
+            _ => false
+        };
+
+        return isActive ? "active" : "";
+    }
+    var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
+    var displayName = !string.IsNullOrWhiteSpace(currentUser?.FullName) ? currentUser.FullName : currentUser?.Email;
+    var loyaltyLevel = currentUser?.LoyaltyLevel ?? "Thành viên";
+    var avatarUrl = currentUser?.AvatarUrl;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - FoodieTTTM</title>
+    <link rel="icon" type="image/jpeg" href="~/assets/images/logo/logo_tttm.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/assets/css/style.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body data-chat-authenticated="@(currentUser != null ? "true" : "false")">
+    <header class="header">
+        <div class="container navbar">
+            <a asp-controller="Home" asp-action="Index" class="logo-box">
+                <div class="logo-circle logo-image"><img src="~/assets/images/logo/logo_tttm.jpg" alt="FoodieTTTM" /></div>
+                <div class="logo-text">
+                    <h2>FoodieTTTM</h2>
+                    <span>Food • Recipe • Smart Choice</span>
+                </div>
+            </a>
+
+            <nav class="nav-links">
+                <a class='@IsNavActive("home")' asp-controller="Home" asp-action="Index">Trang chủ</a>
+                <a class='@IsNavActive("menu")' href="/menu">Món ăn</a>
+                <a class='@IsNavActive("recipes")' href="/recipes">Công thức</a>
+                <a class='@IsNavActive("food-guide")' href="/food-guide">Chọn thực phẩm</a>
+                <a class='@IsNavActive("tables")' href="/ban">Đặt bàn & Không gian</a>
+                <a class='@IsNavActive("tracking")' href="/tra-cuu-don-hang">Tra cứu đơn hàng</a>
+            </nav>
+
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Mở menu">☰</button>
+
+            <div class="nav-actions">
+                @if (currentUser == null)
+                {
+                    <a class="btn btn-outline" href="/dang-nhap">Đăng nhập</a>
+                }
+                else
+                {
+                    <div class="account-menu">
+                        <button class="btn btn-outline account-trigger" type="button">
+                            <span class="account-avatar">
+                                @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                                {
+                                    <img src="@avatarUrl" alt="Avatar của @displayName" />
+                                }
+                                else
+                                {
+                                    <span>👤</span>
+                                }
+                            </span>
+                            <span class="account-trigger-text">
+                                <span>@displayName</span>
+                                <small>@loyaltyLevel</small>
+                            </span>
+                        </button>
+                        <div class="account-dropdown">
+                            <div class="account-summary">
+                                <div class="account-summary-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                                    {
+                                        <img src="@avatarUrl" alt="Avatar của @displayName" />
+                                    }
+                                    else
+                                    {
+                                        <span>👤</span>
+                                    }
+                                </div>
+                                <strong>@displayName</strong>
+                                <span>@currentUser.Email</span>
+                                <em>Hạng: @loyaltyLevel</em>
+                            </div>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a href="/admin">Khu quản trị</a>
+                            }
+                            <a href="/tai-khoan">Thông tin tài khoản</a>
+                            <a href="/lich-su-don-hang">Lịch sử đơn hàng</a>
+                            <a href="/tai-khoan#hang-thanh-vien">Hạng thành viên</a>
+                            <form method="post" action="/dang-xuat">
+                                <button type="submit">Đăng xuất</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                <button class="btn btn-dark cart-toggle-btn" onclick="toggleCart()">
+                    <span class="cart-toggle-label">Giỏ hàng</span>
+                    <span class="cart-count-badge" id="cartCount"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="mobile-nav-panel" id="mobileNavPanel">
+            <div class="container mobile-nav-inner">
+                <a class='@IsNavActive("home")' asp-controller="Home" asp-action="Index">Trang chủ</a>
+                <a class='@IsNavActive("menu")' href="/menu">Món ăn</a>
+                <a class='@IsNavActive("recipes")' href="/recipes">Công thức</a>
+                <a class='@IsNavActive("food-guide")' href="/food-guide">Chọn thực phẩm</a>
+                <a class='@IsNavActive("tables")' href="/ban">Đặt bàn & Không gian</a>
+                <a class='@IsNavActive("tracking")' href="/tra-cuu-don-hang">Tra cứu đơn hàng</a>
+                @if (currentUser == null)
+                {
+                    <a href="/dang-nhap">Đăng nhập</a>
+                }
+                else
+                {
+                    <a href="/tai-khoan" class="mobile-account-link">
+                        @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                        {
+                            <img src="@avatarUrl" alt="Avatar của @displayName" />
+                        }
+                        else
+                        {
+                            <span>👤</span>
+                        }
+                        <span>@displayName - @loyaltyLevel</span>
+                    </a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="/admin">Khu quản trị</a>
+                    }
+                    <a href="/lich-su-don-hang">Lịch sử đơn hàng</a>
+                    <form method="post" action="/dang-xuat">
+                        <button type="submit">Đăng xuất</button>
+                    </form>
+                }
+                <button class="mobile-cart-toggle" onclick="toggleCart()">
+                    <span>Giỏ hàng</span>
+                    <span class="cart-count-badge" id="mobileCartCount"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="golden-hour-banner" id="goldenHourBanner">
+        <div class="golden-hour-inner">
+            <div class="golden-hour-left">
+                <span class="golden-hour-icon">🔥</span>
+                <div>
+                    <h3>Đang là giờ vàng!</h3>
+                    <p>Áp dụng ưu đãi cho các món best seller trong khung giờ này.</p>
+                </div>
+            </div>
+            <div class="golden-hour-right">
+                <span>Kết thúc sau</span>
+                <strong id="goldenHourCountdown">00:00:00</strong>
+                <button onclick="closeGoldenHourBanner()">×</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <div class="food-detail-modal" id="foodDetailModal">
+        <div class="food-detail-backdrop" onclick="closeFoodDetail()"></div>
+        <div class="food-detail-card">
+            <button class="food-detail-close" onclick="closeFoodDetail()">×</button>
+            <div class="food-detail-img">
+                <img id="detailImage" src="" alt="Chi tiết món ăn" />
+                <span id="detailTag">Món ngon</span>
+            </div>
+            <div class="food-detail-content">
+                <p class="food-detail-eyebrow">Chi tiết món ăn</p>
+                <h2 id="detailName">Tên món</h2>
+                <p id="detailDesc">Mô tả món ăn</p>
+                <div class="food-detail-info">
+                    <div>
+                        <h3>Thành phần chính</h3>
+                        <ul id="detailIngredients"></ul>
+                    </div>
+                    <div>
+                        <h3>Câu chuyện món ăn</h3>
+                        <p id="detailStory"></p>
+                    </div>
+                </div>
+                <div class="food-detail-actions">
+                    <strong id="detailPrice">0đ</strong>
+                    <button class="btn btn-primary" id="detailAddBtn">Thêm vào giỏ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-chatbot">
+        <button class="chatbot-toggle" onclick="toggleFloatingChat()">
+            <span class="chatbot-pulse"></span>
+            <span class="chatbot-icon">🤖</span>
+            <span class="chatbot-label">Tư vấn món ngon</span>
+        </button>
+        <div class="floating-chat-window" id="floatingChatWindow">
+            <div class="floating-chat-header">
+                <div>
+                    <h3>FoodieBot</h3>
+                    <p>Tư vấn món ăn theo menu FoodieLab</p>
+                </div>
+                <div class="floating-chat-header-actions">
+                    <button type="button" onclick="clearFloatingChat()">Xóa đoạn chat</button>
+                    <button type="button" onclick="toggleFloatingChat()">×</button>
+                </div>
+            </div>
+            <div class="floating-chat-suggestions">
+                <button onclick="quickChat('Gợi ý món hôm nay')">Gợi ý món hôm nay</button>
+                <button onclick="quickChat('Tôi muốn ăn no')">Tôi muốn ăn no</button>
+                <button onclick="quickChat('Tôi muốn ăn nhẹ')">Tôi muốn ăn nhẹ</button>
+                <button onclick="quickChat('Tôi muốn ăn chay')">Tôi muốn ăn chay</button>
+                <button onclick="quickChat('Món không cay')">Món không cay</button>
+                <button onclick="quickChat('Món dưới 60.000đ')">Món dưới 60.000đ</button>
+                <button onclick="quickChat('Tôi dị ứng trứng')">Tôi dị ứng trứng</button>
+                <button onclick="quickChat('Gặp nhân viên')">Gặp nhân viên</button>
+            </div>
+            <div class="floating-chat-messages" id="floatingChatMessages">
+                <div class="message bot">Xin chào! Mình là FoodieBot. Bạn muốn ăn no, ăn nhẹ, món chay hay món theo giá hôm nay?</div>
+            </div>
+            <div class="floating-chat-human">
+                <button type="button" onclick="openMessengerSupport()">Chat với nhân viên</button>
+            </div>
+            <div class="floating-chat-form">
+                <input type="text" id="floatingChatInput" maxlength="500" placeholder="Nhập: cơm sườn, món chay, dị ứng trứng..." />
+                <button onclick="sendFloatingMessage()">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cart-panel" id="cartPanel">
+        <h3>Giỏ hàng</h3>
+        <div class="cart-list" id="cartList"><p class="muted-text">Chưa có món nào.</p></div>
+        <div class="cart-total"><span>Tổng tiền:</span><span id="cartTotal">0đ</span></div>
+        <a class="btn btn-primary full-btn" href="/checkout">Thanh toán</a>
+    </div>
+
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a asp-controller="Home" asp-action="Index" class="footer-logo">
+                    <div class="logo-circle logo-image"><img src="~/assets/images/logo/logo_tttm.jpg" alt="FoodieTTTM" /></div>
+                    <div><h2>FoodieTTTM</h2><span>Food • Recipe • Smart Choice</span></div>
+                </a>
+                <p>FoodieTTTM là website demo bán đồ ăn kết hợp công thức nấu ăn cơ bản, mẹo chọn thực phẩm và chatbot tư vấn món theo tâm trạng.</p>
+                <div class="footer-socials"><a href="#">f</a><a href="#">ig</a><a href="#">tt</a></div>
+            </div>
+            <div class="footer-col">
+                <h3>Điều hướng</h3>
+                <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+                <a class='@IsNavActive("menu")' href="/menu">Món ăn</a>
+                <a class='@IsNavActive("recipes")' href="/recipes">Công thức</a>
+                <a class='@IsNavActive("food-guide")' href="/food-guide">Chọn thực phẩm</a>
+                <a class='@IsNavActive("tables")' href="/ban">Đặt bàn & Không gian</a>
+                <a class='@IsNavActive("tracking")' href="/tra-cuu-don-hang">Tra cứu đơn hàng</a>
+            </div>
+            <div class="footer-col">
+                <h3>Liên hệ</h3>
+                <p><strong>Hotline:</strong> YOUR_SUPPORT_PHONE</p>
+                <p><strong>Email:</strong> support@foodielab.local</p>
+                <p><strong>Giờ mở cửa:</strong> 08:00 - 22:00</p>
+                <p><strong>Giờ vàng:</strong> 10:30 - 12:30, 16:00 - 18:00</p>
+            </div>
+            <div class="footer-col footer-address">
+                <h3>Địa chỉ</h3>
+                <p>HUTECH Khu E - Phân khu Đào tạo E1, Khu Công nghệ cao, Phường Tăng Nhơn Phú, TP.HCM</p>
+                <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=HUTECH%20Khu%20E%20-%20Ph%C3%A2n%20khu%20%C4%90%C3%A0o%20t%E1%BA%A1o%20E1%2C%20Khu%20C%C3%B4ng%20ngh%E1%BB%87%20cao%2C%20Ph%C6%B0%E1%BB%9Dng%20T%C4%83ng%20Nh%C6%A1n%20Ph%C3%BA%2C%20TP.HCM" target="_blank" rel="noopener noreferrer">📍 Xem trên Google Maps</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>© 2026 FoodieTTTM. All rights reserved.</p>
+            <div><a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a><a asp-controller="Home" asp-action="Terms">Điều khoản sử dụng</a></div>
+        </div>
+    </footer>
+
+    <script src="~/assets/js/main.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

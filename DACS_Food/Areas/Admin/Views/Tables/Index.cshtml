@@ -1,0 +1,222 @@
+﻿@model DACS_Food.ViewModels.AdminTablesViewModel
+@using DACS_Food.Models
+@{
+    ViewData["Title"] = "Quản lý bàn";
+
+    string ReservationStatusText(ReservationStatus status) => status switch
+    {
+        ReservationStatus.Pending => "Chờ xác nhận",
+        ReservationStatus.Confirmed => "Đã xác nhận",
+        ReservationStatus.Completed => "Hoàn thành",
+        ReservationStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
+    };
+
+    string ReservationBadge(ReservationStatus status) => status switch
+    {
+        ReservationStatus.Pending => "badge-soft badge-waiting",
+        ReservationStatus.Confirmed => "badge-soft badge-progress",
+        ReservationStatus.Completed => "badge-soft badge-done",
+        ReservationStatus.Cancelled => "badge-soft badge-cancel",
+        _ => "badge-soft"
+    };
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý bàn & đặt bàn</h1>
+        <p>Toàn bộ lịch đặt bàn của khách được gom trong khu quản trị để nhân viên xác nhận và theo dõi.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (TempData["AdminTableMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+        @if (TempData["AdminTableError"] is string error)
+        {
+            <div class="notice danger">@error</div>
+        }
+
+        <div class="operations-stats">
+            <div class="simple-card"><h3>@Model.Tables.Count</h3><p>Bàn đang quản lý</p></div>
+            <div class="simple-card"><h3>@Model.PendingReservations</h3><p>Lịch chờ xác nhận</p></div>
+            <div class="simple-card"><h3>@Model.ConfirmedReservations</h3><p>Lịch đã xác nhận</p></div>
+            <div class="simple-card"><h3>@Model.Reservations.Count</h3><p>Lịch gần đây</p></div>
+        </div>
+
+        <div class="checkout-layout admin-reservation-create">
+            <form class="checkout-card light" id="adminReservationForm" method="post" action="/admin/ban/dat-ban">
+                <h3>Tạo lịch đặt bàn</h3>
+                <p>Chọn ngày và bàn để tải khung giờ còn trống. Mỗi lịch đặt sẽ giữ bàn trong 90 phút giống nghiệp vụ đặt bàn bên ngoài.</p>
+                <div class="form-group">
+                    <input id="adminReservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    <select id="adminReservationTableId" name="TableId" required>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id">@table.Name - @(table.TableType == TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
+                        }
+                    </select>
+                    <select id="adminReservationTimeSlot" name="TimeSlot" required>
+                        <option value="">Chọn ngày và bàn để tải khung giờ</option>
+                    </select>
+                    <input name="CustomerName" placeholder="Tên khách" required />
+                    <input name="PhoneNumber" placeholder="Số điện thoại khách" required />
+                    <textarea name="Note" rows="3" placeholder="Ghi chú đặt bàn nếu có"></textarea>
+                    <select name="Status">
+                        <option value="Pending">Chờ xác nhận</option>
+                        <option value="Confirmed">Đã xác nhận</option>
+                    </select>
+                    <button class="btn btn-primary" type="submit">Tạo lịch đặt bàn</button>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Nghiệp vụ giữ bàn</h3>
+                <p>Khung giờ Pending hoặc Confirmed sẽ khóa lịch 90 phút cho bàn đã chọn. Khi chuyển lịch sang Hoàn thành hoặc Đã hủy, hệ thống mở lại bàn nếu không còn lịch đang giữ chỗ.</p>
+                <div class="policy-list">
+                    <p>Giờ nhận đặt bàn: 08:30 đến 21:00.</p>
+                    <p>Admin có thể tạo lịch thay khách sau khi nhận điện thoại hoặc tin nhắn.</p>
+                    <p>Sau khi khách rời bàn, chuyển lịch sang Hoàn thành để cập nhật trạng thái bàn.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-head compact">
+            <div class="section-title">
+                <h2>Trạng thái bàn</h2>
+                <p>Trạng thái đã đặt được tính theo lịch đặt trong ngày đang xem, không dùng trạng thái bàn toàn cục.</p>
+            </div>
+            <form class="admin-date-filter" method="get" action="/admin/ban">
+                <label for="adminTableDate">Ngày xem</label>
+                <input id="adminTableDate" type="date" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                <button class="small-btn" type="submit">Xem trạng thái</button>
+            </form>
+        </div>
+
+        <div class="table-grid admin-table-cards">
+            @foreach (var table in Model.Tables)
+            {
+                var isBookedOnSelectedDate = Model.BookedTableIds.Contains(table.Id);
+                var displayStatus = table.Status == TableStatus.Maintenance
+                    ? "Bảo trì"
+                    : table.Status == TableStatus.Occupied
+                        ? "Đang phục vụ"
+                        : isBookedOnSelectedDate ? "Đã đặt" : "Đang trống";
+                <div class="table-card">
+                    <h3>@table.Name</h3>
+                    <p>@table.TableType - @table.Capacity người</p>
+                    <span class="status">@displayStatus</span>
+                    <form class="table-admin-form" method="post" action="/admin/ban/status">
+                        <input type="hidden" name="id" value="@table.Id" />
+                        <select name="status">
+                            <option value="Available" selected="@(table.Status == TableStatus.Available)">Đang trống</option>
+                            <option value="Occupied" selected="@(table.Status == TableStatus.Occupied)">Đang phục vụ</option>
+                            <option value="Maintenance" selected="@(table.Status == TableStatus.Maintenance)">Bảo trì</option>
+                        </select>
+                        <button class="small-btn" type="submit">Cập nhật bàn</button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        <div class="section-head compact admin-reservation-head">
+            <div class="section-title">
+                <h2>Lịch đặt bàn</h2>
+                <p>Admin xác nhận, hoàn thành hoặc hủy lịch đặt bàn ngay tại đây.</p>
+            </div>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table operations-table">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Khách hàng</th>
+                        <th>Bàn</th>
+                        <th>Ghi chú</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var reservation in Model.Reservations)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@reservation.StartAt.ToString("dd/MM/yyyy")</strong>
+                                <small>@reservation.StartAt.ToString("HH:mm") - @reservation.DurationMinutes phút</small>
+                            </td>
+                            <td>
+                                <strong>@reservation.CustomerName</strong>
+                                <small>@reservation.PhoneNumber</small>
+                            </td>
+                            <td>@(reservation.RestaurantTable?.Name ?? $"Bàn #{reservation.RestaurantTableId}")</td>
+                            <td>@(string.IsNullOrWhiteSpace(reservation.Note) ? "Không có" : reservation.Note)</td>
+                            <td><span class="@ReservationBadge(reservation.Status)">@ReservationStatusText(reservation.Status)</span></td>
+                            <td>
+                                <div class="table-actions">
+                                    @if (reservation.Status == ReservationStatus.Pending)
+                                    {
+                                        <form method="post" action="/admin/ban/dat-ban/status">
+                                            <input type="hidden" name="id" value="@reservation.Id" />
+                                            <input type="hidden" name="status" value="Confirmed" />
+                                            <button class="small-btn" type="submit">Xác nhận</button>
+                                        </form>
+                                    }
+                                    @if (reservation.Status == ReservationStatus.Pending || reservation.Status == ReservationStatus.Confirmed)
+                                    {
+                                        <form method="post" action="/admin/ban/dat-ban/status">
+                                            <input type="hidden" name="id" value="@reservation.Id" />
+                                            <input type="hidden" name="status" value="Completed" />
+                                            <button class="small-btn neutral" type="submit">Hoàn thành</button>
+                                        </form>
+                                        <form method="post" action="/admin/ban/dat-ban/status">
+                                            <input type="hidden" name="id" value="@reservation.Id" />
+                                            <input type="hidden" name="status" value="Cancelled" />
+                                            <button class="small-btn danger" type="submit">Hủy</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        async function loadAdminReservationSlots() {
+            const dateInput = document.getElementById('adminReservationDate');
+            const tableInput = document.getElementById('adminReservationTableId');
+            const slotInput = document.getElementById('adminReservationTimeSlot');
+            if (!dateInput || !tableInput || !slotInput || !dateInput.value || !tableInput.value) return;
+
+            slotInput.innerHTML = '<option value="">Đang tải khung giờ...</option>';
+            try {
+                const response = await fetch(`/admin/ban/khung-gio?date=${encodeURIComponent(dateInput.value)}&tableId=${encodeURIComponent(tableInput.value)}`, {
+                    headers: { Accept: 'application/json' }
+                });
+                if (!response.ok) throw new Error('Không tải được khung giờ');
+                const slots = await response.json();
+                slotInput.innerHTML = slots.length
+                    ? slots.map(slot => `<option value="${slot.time}" ${slot.isAvailable ? '' : 'disabled'}>${slot.label}</option>`).join('')
+                    : '<option value="">Không có khung giờ</option>';
+            } catch {
+                slotInput.innerHTML = '<option value="">Không tải được khung giờ</option>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('adminReservationDate')?.addEventListener('change', loadAdminReservationSlots);
+            document.getElementById('adminReservationTableId')?.addEventListener('change', loadAdminReservationSlots);
+            loadAdminReservationSlots();
+        });
+    </script>
+}

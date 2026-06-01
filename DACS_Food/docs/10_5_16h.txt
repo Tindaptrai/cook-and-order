@@ -1,0 +1,103 @@
+Checkpoint hiện tại của DACS_Food
+
+1. Chức năng đã hoàn thành
+- Menu tách riêng thành trang riêng, có lọc danh mục/subcategory, popup chi tiết món, gọi API backend.
+- Công thức nấu ăn có trang riêng, phân trang 4 trang, lọc danh mục, modal chi tiết, gọi API backend.
+- Food Guide có trang riêng, lọc nhóm thực phẩm, tìm kiếm theo tên Việt/Anh, modal chi tiết, gọi API backend.
+- Giỏ hàng đã nối backend API, không còn chỉ dựa vào localStorage.
+- Checkout đã tạo đơn hàng qua API, có luồng COD/QR demo.
+- Thanh toán QR demo có API xác nhận.
+- Admin dashboard có API thống kê tổng quan.
+- Admin đơn hàng có xem danh sách, lọc trạng thái, đổi trạng thái đơn hàng.
+- Vận đơn đã được thêm ở mức cơ bản: mã vận đơn, trạng thái giao hàng, shipper name/phone, ghi chú, hiển thị ở admin và trang thành công.
+- Floating chatbot, golden hour banner, food detail popup vẫn được giữ lại.
+
+2. File đã sửa
+- Models/Order.cs
+- Models/Recipe.cs
+- Models/Enums.cs
+- Models/FoodItem.cs
+- Data/ApplicationDbContext.cs
+- Data/DatabaseSeeder.cs
+- Services/OrderService.cs
+- Services/FoodService.cs
+- Services/Interfaces.cs
+- Controllers/RecipeController.cs
+- Controllers/Api/RecipesApiController.cs
+- Controllers/Api/FoodGuideApiController.cs
+- Controllers/Api/OrdersApiController.cs
+- Controllers/Api/PaymentsApiController.cs
+- Controllers/Api/AdminApiController.cs
+- Views/Order/Checkout.cshtml
+- Views/Order/Success.cshtml
+- Views/Payment/Qr.cshtml
+- Views/Recipe/Index.cshtml
+- Views/FoodGuide/Index.cshtml
+- Views/Menu/Index.cshtml
+- Views/Shared/_Layout.cshtml
+- Areas/Admin/Views/Dashboard/Index.cshtml
+- Areas/Admin/Views/Orders/Index.cshtml
+- wwwroot/assets/js/main.js
+- wwwroot/assets/js/menu.js
+- wwwroot/assets/js/recipes.js
+- wwwroot/assets/js/food-guide.js
+- wwwroot/assets/css/style.css
+- wwwroot/assets/css/menu.css
+- wwwroot/assets/css/recipes.css
+- wwwroot/assets/css/food-guide.css
+
+3. Model/database đã thêm gì
+- Order:
+  - TrackingCode
+  - DeliveryStatus
+  - ShipperName
+  - ShipperPhone
+  - DeliveryNote
+  - ShippedAt
+  - DeliveredAt
+- Recipe:
+  - Category
+  - CategoryLabel
+  - PrepTime
+  - CookTime
+  - Servings
+  - Tips
+  - SafetyNote
+  - AllergyNote
+- FoodItem:
+  - MainCategory
+  - Subcategory
+  - AllergyNote
+- Enums:
+  - DeliveryStatus
+- DatabaseSeeder:
+  - tự thêm cột nếu DB cũ chưa có
+  - seed menu, recipe mẫu, và cấu trúc vận đơn
+
+4. Cách test flow đặt hàng và vận đơn
+- Vào menu, chọn món và thêm vào giỏ.
+- Mở `/checkout`.
+- Nhập tên, số điện thoại, địa chỉ.
+- Chọn `COD` hoặc `QR`.
+- Bấm tạo đơn.
+- Nếu chọn `QR`, chuyển sang `/payment/qr/{orderCode}` rồi xác nhận demo payment.
+- Kiểm tra đơn xuất hiện ở `/admin/don-hang`.
+- Trong admin, xem:
+  - mã đơn
+  - mã vận đơn
+  - trạng thái đơn hàng
+  - trạng thái giao hàng
+  - shipper name/phone
+  - ghi chú vận đơn
+- Đổi trạng thái vận đơn sang `Shipping` hoặc `Delivered` để kiểm tra luồng cập nhật.
+- Khi `Delivered`, đơn hàng sẽ tự chuyển sang `Completed`.
+
+5. Những việc còn cần làm tiếp
+- Gắn admin dashboard vào giao diện đẹp hơn, hiện KPI thực tế và biểu đồ nếu cần.
+- Chuẩn hóa UI admin đơn hàng thành table/card rõ hơn.
+- Hoàn thiện phần vận đơn nếu muốn tách shipper riêng hoặc tích hợp đơn vị giao hàng thật.
+- Kiểm tra trực tiếp runtime với database thật để chắc chắn các cột mới đã được tạo đúng.
+- Rà lại các trang mobile để đảm bảo modal/popup không còn lỗi scroll hoặc tràn.
+
+6. Prompt ngắn cho lần sau
+Tiếp tục từ checkpoint hiện tại của DACS_Food. Ưu tiên hoàn thiện admin dashboard và flow vận đơn/đơn hàng. Kiểm tra các file: Controllers/Api/AdminApiController.cs, Areas/Admin/Views/Orders/Index.cshtml, Services/OrderService.cs, Models/Order.cs, Data/DatabaseSeeder.cs. Không làm lại các phần menu/recipe/food-guide nếu không cần.

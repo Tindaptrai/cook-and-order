@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Xác nhận giao hàng";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Nhân viên</div>
+        <h1>Xác nhận giao hàng thành công</h1>
+        <p>Nhập mã đơn hàng khi shipper báo đã giao xong. Chỉ đơn đang giao hàng mới được xác nhận.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (TempData["AdminOrderMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+        @if (TempData["AdminOrderError"] is string error)
+        {
+            <div class="notice danger">@error</div>
+        }
+
+        <form class="simple-card form-group confirm-delivery-form" method="post" action="/admin/don-hang/xac-nhan-giao-hang">
+            <h3>Mã đơn hàng</h3>
+            <input name="orderCode" placeholder="Ví dụ: FD20260510123000123" required />
+            <button class="btn btn-primary" type="submit">Xác nhận đã giao</button>
+        </form>
+    </div>
+</section>

@@ -1,0 +1,58 @@
+﻿@model DACS_Food.Models.Order
+@using DACS_Food.ViewModels
+@{
+    ViewData["Title"] = "QR thanh toán";
+    var qr = ViewBag.QrPayment as QrPaymentInfoViewModel;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">QR Payment</div>
+        <h1>Thanh toán chuyển khoản</h1>
+        <p>Vui lòng chuyển khoản đúng số tiền và nội dung để FoodieLab dễ đối soát.</p>
+    </div>
+</section>
+
+<section class="section section-soft">
+    <div class="container qr-payment-layout">
+        <div class="checkout-card qr-payment-card">
+            @if (qr != null)
+            {
+                <img class="qr-payment-image" src="@qr.QrImageUrl" alt="QR thanh toán đơn @Model.OrderCode" />
+                <div class="qr-payment-notice">Vui lòng chuyển khoản đúng nội dung: <strong>@qr.TransferContent</strong></div>
+            }
+            else
+            {
+                <div class="qr-demo"></div>
+            }
+        </div>
+        <div class="checkout-card light qr-payment-info">
+            <h3>Thông tin chuyển khoản</h3>
+            <p><strong>Mã đơn:</strong> @Model.OrderCode</p>
+            <p><strong>Ngân hàng:</strong> @(qr?.BankName ?? Model.Payment?.BankName)</p>
+            <p><strong>Số tài khoản:</strong> <span id="qrAccountNumber">@(qr?.BankAccountNumber ?? Model.Payment?.BankAccountNumber)</span></p>
+            <p><strong>Chủ tài khoản:</strong> @(qr?.BankAccountName ?? Model.Payment?.BankAccountName)</p>
+            <p><strong>Số tiền cần chuyển:</strong> @((qr?.Amount ?? Model.TotalAmount).ToString("N0"))đ</p>
+            <p><strong>Nội dung chuyển khoản:</strong> <span id="qrTransferContent">@(qr?.TransferContent ?? Model.Payment?.QrContent)</span></p>
+            <div class="qr-payment-actions">
+                <button class="btn btn-outline" type="button" onclick="copyQrText('qrAccountNumber')">Copy số tài khoản</button>
+                <button class="btn btn-outline" type="button" onclick="copyQrText('qrTransferContent')">Copy nội dung chuyển khoản</button>
+            </div>
+            <p class="qr-payment-warning">Sau khi chuyển khoản, bạn có thể bấm xác nhận demo để hoàn tất trong môi trường thử nghiệm.</p>
+            <form id="demoPaymentForm" method="post" action="/payment/demo-confirm">
+                <input type="hidden" name="orderCode" value="@Model.OrderCode" />
+                <button class="btn btn-primary">Xác nhận đã thanh toán demo</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function copyQrText(id) {
+            const element = document.getElementById(id);
+            if (!element) return;
+            navigator.clipboard.writeText(element.textContent.trim());
+        }
+    </script>
+}

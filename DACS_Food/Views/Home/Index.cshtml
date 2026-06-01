@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Trang chủ";
+    var tables = ViewBag.Tables as IReadOnlyList<DACS_Food.ViewModels.PublicTableViewModel> ?? new List<DACS_Food.ViewModels.PublicTableViewModel>();
+}
+
+<section class="hero">
+    <div class="container hero-content">
+        <div>
+            <div class="badge">Giờ vàng giảm giá 10:30-12:30 và 16:00-18:00</div>
+            <h1>Đặt món ngon, học nấu <span>căn bản</span>, chọn thực phẩm tốt hơn.</h1>
+            <p>Website bán đồ ăn kết hợp công thức nấu ăn cơ bản, mẹo chọn thực phẩm và chatbot tư vấn món theo nguyên liệu hoặc tâm trạng của khách hàng.</p>
+            <div class="hero-buttons">
+                <a href="/menu" class="btn btn-primary">Xem thực đơn</a>
+                <a href="/recipes" class="btn btn-outline">Xem công thức</a>
+                <a href="/food-guide" class="btn btn-outline">Cách chọn thực phẩm</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-card"><h3>25+</h3><p>Món trong thực đơn</p></div>
+                <div class="stat-card"><h3>10</h3><p>Bàn phục vụ</p></div>
+                <div class="stat-card"><h3>24/7</h3><p>Chatbot hỗ trợ</p></div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="hero-image-card"><img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80" alt="Món ăn nổi bật" /></div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-title">
+                <div class="badge">Thực đơn FoodieTTTM</div>
+                <h2>Xem toàn bộ thực đơn ở trang riêng</h2>
+                <p>Trang chủ chỉ giới thiệu nhanh về FoodieTTTM. Danh sách món ăn, đồ uống và thông tin dị ứng được đặt trong trang thực đơn riêng.</p>
+            </div>
+            <a href="/menu" class="btn btn-primary">Xem thực đơn</a>
+        </div>
+    </div>
+</section>
+
+<section class="section section-soft">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-title">
+                <div class="badge">Tình trạng bàn tại quán</div>
+                <h2>Bàn đang phục vụ</h2>
+                <p>Khách có thể xem bàn còn trống hay đang bận. Thông tin đặt bàn chi tiết chỉ dành cho nhân viên quản trị.</p>
+            </div>
+            <a class="btn btn-outline" href="/ban">Xem trang bàn</a>
+        </div>
+
+        <div class="table-grid">
+            @foreach (var table in tables)
+            {
+                var tableClass = table.IsBusy ? "occupied" : "";
+                <div class="table-card @tableClass">
+                    <h3>@table.Name</h3>
+                    <p>@(table.TableType == DACS_Food.Models.TableType.Private ? "Bàn private" : "Bàn thường") - @table.Capacity người</p>
+                    <span class="status">@(table.IsBusy ? "Đang bận" : "Còn trống")</span>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+

@@ -1,0 +1,66 @@
+﻿@model DACS_Food.Models.Order
+@using DACS_Food.Services
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+    var canShowQrPayment = Model.PaymentMethod == DACS_Food.Models.PaymentMethod.QR
+        && (Model.PaymentStatus == DACS_Food.Models.PaymentStatus.Pending || Model.PaymentStatus == DACS_Food.Models.PaymentStatus.Unpaid)
+        && Model.OrderStatus != DACS_Food.Models.OrderStatus.Cancelled;
+    var isPaid = Model.PaymentStatus == DACS_Food.Models.PaymentStatus.Paid;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">✅ Đơn hàng</div>
+        <h1>FoodieTTTM đã nhận đơn của bạn</h1>
+        <p>Mã đơn: @Model.OrderCode</p>
+    </div>
+</section>
+<section class="section section-light">
+    <div class="container simple-grid">
+        <div class="simple-card">
+            <h3>Cảm ơn bạn đã đặt món</h3>
+            <p>Nhân viên FoodieTTTM sẽ gọi lại cho bạn trong ít phút để xác nhận đơn hàng trước khi chuẩn bị món.</p>
+            <p>Bạn cứ yên tâm, nếu thông tin có nhầm lẫn hoặc cần đổi món, đội ngũ của quán sẽ hỗ trợ điều chỉnh kịp thời.</p>
+        </div>
+
+        <div class="simple-card">
+            <h3>Thông tin giao hàng</h3>
+            <p><strong>Người nhận:</strong> @Model.CustomerName</p>
+            <p><strong>Số điện thoại:</strong> @Model.PhoneNumber</p>
+            <p><strong>Địa chỉ:</strong> @Model.Address</p>
+            <p><strong>Mã vận đơn:</strong> @(string.IsNullOrWhiteSpace(Model.TrackingCode) ? "Đang tạo" : Model.TrackingCode)</p>
+            <p><strong>Trạng thái giao hàng:</strong> @OrderService.GetDeliveryStatusLabel(Model.DeliveryStatus)</p>
+            <p>Nếu tên, số điện thoại hoặc địa chỉ chưa đúng, bạn có thể nhắn trực tiếp cho FoodieTTTM hoặc gọi hotline để quán xử lý nhanh hơn.</p>
+        </div>
+
+        <div class="simple-card">
+            <h3>Tóm tắt đơn hàng</h3>
+            <p><strong>Tổng tiền:</strong> @Model.TotalAmount.ToString("N0")đ</p>
+            <p><strong>Trạng thái:</strong> @OrderService.GetOrderStatusLabel(Model.OrderStatus) - @OrderService.GetPaymentStatusLabel(Model.PaymentStatus)</p>
+            <p><strong>Thanh toán:</strong> @(Model.PaymentMethod == DACS_Food.Models.PaymentMethod.COD ? "Tiền mặt / COD" : "Chuyển khoản QR")</p>
+            <p><strong>Liên hệ nhanh:</strong> YOUR_SUPPORT_PHONE - Facebook FoodieTTTM - Zalo FoodieTTTM</p>
+            @if (canShowQrPayment)
+            {
+                <a class="btn btn-primary" href="/payment/qr/@Model.OrderCode">Xem QR thanh toán</a>
+            }
+            else if (isPaid)
+            {
+                <p class="form-success">Đơn hàng đã được thanh toán thành công.</p>
+                <a class="btn btn-primary" href="/tra-cuu-don-hang">Tra cứu đơn hàng</a>
+            }
+            else
+            {
+                <a class="btn btn-primary" href="/tra-cuu-don-hang">Tra cứu đơn hàng</a>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        localStorage.removeItem('foodie_cart');
+        if (typeof cart !== 'undefined') cart = [];
+        if (typeof renderCart === 'function') renderCart();
+    </script>
+}
+

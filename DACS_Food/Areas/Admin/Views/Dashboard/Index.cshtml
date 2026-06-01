@@ -1,0 +1,58 @@
+@{ ViewData["Title"] = "Dashboard"; }
+<section class="page-hero"><div class="container"><div class="badge">Admin</div><h1>Bảng điều khiển FoodieLab</h1><p>Quản lý món ăn, đơn hàng, người dùng, bàn và mã giảm giá.</p></div></section>
+<section class="section section-light">
+    <div class="container">
+        <div class="simple-grid" id="adminDashboardStats">
+            <div class="simple-card"><h3>Đang tải dữ liệu...</h3><p>Vui lòng chờ trong giây lát.</p></div>
+        </div>
+        <div class="simple-card admin-focus-card" style="margin-top: 18px;">
+            <h3>Trung tâm xử lý đơn</h3>
+            <p class="muted-text">Xem chung đơn đặt món và lịch đặt bàn trong một màn hình để tránh thất lạc yêu cầu mới.</p>
+            <a class="btn btn-primary" href="/admin/trung-tam-xu-ly">Mở trung tâm xử lý</a>
+        </div>
+        <div class="simple-card" style="margin-top: 18px;">
+            <h3>Đơn hàng mới nhất</h3>
+            <div id="adminRecentOrders"><p class="muted-text">Đang tải đơn hàng...</p></div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const formatAdminMoney = value => `${Number(value || 0).toLocaleString('vi-VN')}đ`;
+
+    async function loadAdminDashboard() {
+        const statsRoot = document.getElementById('adminDashboardStats');
+        const recentRoot = document.getElementById('adminRecentOrders');
+        if (!statsRoot || !recentRoot) return;
+
+        try {
+            const response = await fetch('/api/admin/dashboard', { headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('Dashboard API error');
+            const data = await response.json();
+
+            statsRoot.innerHTML = `
+                <div class="simple-card"><h3>${data.totalOrders}</h3><p>Tổng đơn hàng</p></div>
+                <div class="simple-card"><h3>${data.newOrders}</h3><p>Đơn mới cần xử lý</p></div>
+                <div class="simple-card"><h3>${formatAdminMoney(data.revenue)}</h3><p>Doanh thu tạm tính</p></div>
+                <div class="simple-card"><h3>${data.totalFoods}</h3><p>Món đang bán</p></div>
+                <div class="simple-card"><h3>${data.totalUsers}</h3><p>Người dùng</p></div>
+                <div class="simple-card"><h3>${data.totalReservations}</h3><p>Lượt đặt bàn</p></div>
+            `;
+
+            const orders = Array.isArray(data.recentOrders) ? data.recentOrders : [];
+            recentRoot.innerHTML = orders.length
+                ? orders.map(order => `
+                    <div class="cart-item">
+                        <span>${order.orderCode} - ${order.customerName}</span>
+                        <strong>${formatAdminMoney(order.totalAmount)} - ${order.orderStatus}</strong>
+                    </div>
+                `).join('')
+                : '<p class="muted-text">Chưa có đơn hàng.</p>';
+        } catch (error) {
+            statsRoot.innerHTML = '<div class="simple-card"><h3>Không tải được dữ liệu</h3><p>Vui lòng kiểm tra quyền admin hoặc đăng nhập lại.</p></div>';
+            recentRoot.innerHTML = '<p class="muted-text">Không tải được danh sách đơn hàng.</p>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminDashboard);
+</script>

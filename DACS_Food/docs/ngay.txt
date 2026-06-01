@@ -1,0 +1,138 @@
+NHAT KY CONG VIEC HOM NAY - DACS_FOOD / FOODIELAB
+
+1. Kiem tra va tong quan project
+- Doc cau truc project ASP.NET Core MVC DACS_Food.
+- Xac nhan frontend FoodieLab da duoc dua vao cau truc MVC voi Views, Layout va wwwroot/assets.
+- Kiem tra build ban dau bang dotnet build.
+
+2. Thiet ke nghiep vu backend
+- Phan tich nghiep vu website ban do an va cong thuc nau an.
+- De xuat database schema cho mon an, danh muc, gio hang, don hang, thanh toan, OTP, ban, ma giam gia va admin.
+- De xuat Models, Controllers, Services, Routes va thu tu trien khai.
+- Tao file BACKEND_NGHIEP_VU_FOODIELAB.txt de luu lai thiet ke nghiep vu.
+
+3. Xay dung backend nen
+- Them EF Core SQL Server va ASP.NET Core Identity.
+- Tao ApplicationDbContext.
+- Tao ApplicationUser va cac entity nghiep vu:
+  FoodCategory, FoodItem, Recipe, Cart, CartItem, Order, OrderItem, Payment, RestaurantTable, DiscountCode, DiscountUsage, EmailOtp, OtpSendLog.
+- Tao enum nghiep vu:
+  PaymentMethod, PaymentStatus, OrderStatus, OrderType, TableType, TableStatus, DiscountType, DiscountScope, OtpPurpose.
+- Seed du lieu danh muc mon, mot so mon mau, 10 ban, ma giam gia gio vang va ma thanh vien than thiet.
+- Tao DatabaseSeeder de khoi tao database, role Admin/Customer va tai khoan admin mac dinh.
+
+4. Tai khoan va xac thuc
+- Them dang ky, dang nhap, dang xuat bang Identity.
+- Them OTP Gmail ve mat nghiep vu:
+  Tao OTP, hash OTP, het han OTP, xac thuc OTP.
+- Them chong spam OTP:
+  Gioi han gui lai trong 60 giay, gioi han theo gio, theo ngay va theo IP.
+- Them validation cho form dang nhap/dang ky de bam trong khong bi loi.
+- Them menu tai khoan sau khi dang nhap:
+  Ten tai khoan, hang thanh vien, thong tin tai khoan, lich su don hang, dang xuat.
+- Tao trang /tai-khoan va /lich-su-don-hang.
+
+5. Admin
+- Tao Admin Area nen.
+- Them route /admin.
+- Them cac trang admin nen:
+  Mon an, don hang, nguoi dung, ban, ma giam gia.
+- Tao file admin.txt chua tai khoan admin mac dinh:
+  admin@foodielab.local / Admin@123.
+
+6. Swagger API
+- Cai Swashbuckle.AspNetCore.
+- Bat Swagger UI tai /swagger.
+- Them API test:
+  GET /api/foods
+  GET /api/foods/{id}
+  GET /api/foods/slug/{slug}
+  GET /api/foods/best-sellers
+  GET /api/tables
+  GET /api/tables/{id}/slots
+  PUT /api/tables/{id}/status
+  GET /api/discounts/golden-hour
+  GET /api/discounts/calculate
+  GET /api/orders/{orderCode}
+
+7. Menu va mon an
+- Tao MenuController va route /menu, /menu/{slug}.
+- Chuyen nut menu trong layout sang route /menu.
+- Them trang menu backend lay du lieu tu database.
+- Them trang chi tiet mon.
+- Giu popup chi tiet mon an va chatbot noi tren layout.
+
+8. Gio hang va thanh toan
+- Nang cap gio hang frontend:
+  Khong hien so 0 khi gio hang trong.
+  Khi them mon moi tang so luong tren nut Gio hang.
+  Popup gio hang hien hinh anh mon, ten mon, don gia, so luong, thanh tien.
+  Them nut tang, giam, xoa tung mon.
+- Checkout nhan du lieu gio hang tu localStorage khi server cart chua co.
+- Neu da dang nhap, checkout tu dien ten nguoi dung.
+- Nguoi dung nhap so dien thoai, dia chi va chon phuong thuc thanh toan.
+- Tao OrderService de tao don hang, order items, tinh tong tien.
+- Tao PaymentService cho COD va QR demo.
+- Sua nghiep vu:
+  COD khong hien QR demo.
+  QR moi hien trang QR.
+- Sau khi dat hang thanh cong thi clear gio hang.
+- Trang dat hang thanh cong co thong bao than thien:
+  Nha hang da nhan don, nhan vien se goi lai xac nhan ten, so dien thoai, dia chi.
+  Huong dan khach lien he hotline/Facebook/Zalo neu sai thong tin.
+
+9. Ma giam gia
+- Them DiscountService.
+- Ho tro ma gio vang GIOVANG10.
+- Ho tro ma thanh vien than thiet THANTHIET15.
+- Kiem tra gio vang 10:30-12:30 va 16:00-18:00.
+- Gioi han ma thanh vien than thiet 1 tuan/lien.
+
+10. Quan ly ban va dat ban
+- Doi ten menu "Quan ly ban" thanh "Dat ban & Khong gian".
+- Them section tinh trang ban tren trang chu.
+- Chuyen section tinh trang ban xuong duoi Best seller.
+- Xoa section "Website co gi?" tren trang chu.
+- Tao nghiep vu dat ban rieng:
+  TableReservation, ReservationStatus.
+- Trang public /ban chi hien thong tin cong khai:
+  So ban, loai ban Private/Thuong, suc chua, trang thai Con trong/Dang ban.
+- Khong hien ten khach, so dien thoai, email, ghi chu noi bo cho nguoi dung.
+- Nguoi dung co form gui yeu cau dat ban:
+  Ngay dat, ban, gio dat, ho ten, so dien thoai, ghi chu.
+- Sau khi khach gui yeu cau, chi hien thong bao:
+  FoodieLab da nhan thong tin dat ban va nhan vien se lien he lai de xac nhan.
+- Admin co form dat ban nang cao:
+  Chon ngay, chon ban, chon khung gio, ten khach, so dien thoai, ghi chu, trang thai Pending/Confirmed.
+- Khi admin chon ngay va ban, he thong tai danh sach khung gio theo interval 30 phut.
+- Moi luot dat ban mac dinh giu 90 phut.
+- Neu dat 12:00 thi 12:00, 12:30, 13:00 bi khoa cho cung ban.
+- Pending va Confirmed se khoa khung gio.
+- Completed va Cancelled khong khoa khung gio nua.
+- Admin co the chuyen trang thai dat ban sang Completed hoac Cancelled de mo lai khung gio.
+- Quan mo cua 08:00-22:00.
+- Chi nhan dat ban tu 08:30 den 21:00 de tranh sat gio mo/dong cua.
+- Da xoa cau "quan co the ap dung phu thu phuc vu" trong cac View.
+
+11. Chinh sach va dieu khoan
+- Tao noi dung trang Chinh sach bao mat.
+- Tao noi dung trang Dieu khoan su dung.
+- Footer da tro link dung toi 2 trang nay.
+- Dieu khoan co cac muc:
+  Dat mon, thanh toan, dat ban, do an ben ngoai, ma giam gia, ho tro phat sinh.
+
+12. Cac loi da xu ly
+- Loi build bi khoa DACS_Food.exe do ung dung dang chay.
+- Doi link Dang nhap tu trang demo Home/Auth sang /dang-nhap.
+- Sua form dang nhap/dang ky bam trong bi loi.
+- Sua font nut Dang xuat.
+- Sua mau chu trong the Don hang cua ban bi trang tren nen sang.
+- Sua COD khong con hien QR demo.
+
+13. Ghi chu van hanh
+- Tai khoan admin mac dinh:
+  Email: admin@foodielab.local
+  Mat khau: Admin@123
+- Swagger:
+  /swagger
+- Khi build bi loi copy DACS_Food.exe, can dung app dang chay truoc khi build lai.

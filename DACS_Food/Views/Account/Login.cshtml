@@ -1,0 +1,43 @@
+@model DACS_Food.ViewModels.LoginViewModel
+@{ ViewData["Title"] = "Đăng nhập"; }
+
+<section class="auth-page">
+    <div class="container auth-shell">
+        <div class="auth-intro">
+            <div class="badge">Tài khoản FoodieTTTM</div>
+            <h1>Đăng nhập</h1>
+            <p>Truy cập tài khoản để theo dõi đơn hàng, điểm thành viên và lịch đặt bàn của bạn.</p>
+            <div class="auth-benefits">
+                <span>Đặt bàn nhanh</span>
+                <span>Theo dõi đơn hàng</span>
+                <span>Ưu đãi thành viên</span>
+            </div>
+        </div>
+
+        <form class="auth-card auth-login-card" method="post">
+            <span class="auth-eyebrow">Chào mừng trở lại</span>
+            <h3>Đăng nhập tài khoản</h3>
+            <p>Nhập email và mật khẩu đã xác thực OTP.</p>
+            @if (TempData["LoginMessage"] is string loginMessage)
+            {
+                <div class="form-success">@loginMessage</div>
+            }
+            <div class="auth-validation" asp-validation-summary="All"></div>
+            <div class="form-group">
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" placeholder="ten@email.com" />
+                <label asp-for="Password">Mật khẩu</label>
+                <input asp-for="Password" type="password" placeholder="Nhập mật khẩu" />
+                <button class="btn btn-primary" type="submit">Đăng nhập</button>
+            </div>
+            <div class="auth-card-footer">
+                <span>Chưa có tài khoản?</span>
+                <a href="/dang-ky">Đăng ký ngay</a>
+            </div>
+            <div class="auth-card-footer">
+                <span>Quên mật khẩu?</span>
+                <a href="/Account/ForgotPassword">Đặt lại mật khẩu</a>
+            </div>
+        </form>
+    </div>
+</section>

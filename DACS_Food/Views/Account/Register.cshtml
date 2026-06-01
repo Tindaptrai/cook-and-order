@@ -1,0 +1,37 @@
+@model DACS_Food.ViewModels.RegisterViewModel
+@{ ViewData["Title"] = "Đăng ký"; }
+
+<section class="auth-page auth-register-page">
+    <div class="container auth-shell">
+        <div class="auth-intro">
+            <div class="badge">OTP Gmail</div>
+            <h1>Đăng ký tài khoản</h1>
+            <p>Tạo tài khoản FoodieTTTM để đặt bàn, lưu lịch sử đơn hàng và nhận ưu đãi thành viên.</p>
+            <div class="auth-benefits">
+                <span>OTP 8 chữ số</span>
+                <span>Gửi lại sau 60 giây</span>
+                <span>Chống spam email/IP</span>
+            </div>
+        </div>
+
+        <form class="auth-card auth-login-card" method="post">
+            <span class="auth-eyebrow">Xác thực bằng Gmail</span>
+            <h3>Đăng ký + OTP</h3>
+            <p>Sau khi gửi thông tin, hệ thống sẽ gửi mã OTP 8 chữ số về Gmail của bạn.</p>
+            <div class="auth-validation" asp-validation-summary="All"></div>
+            <div class="form-group">
+                <label asp-for="FullName">Họ tên</label>
+                <input asp-for="FullName" placeholder="Nhập họ tên" />
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" placeholder="ten@email.com" />
+                <label asp-for="Password">Mật khẩu</label>
+                <input asp-for="Password" type="password" placeholder="Tối thiểu 6 ký tự" />
+                <button class="btn btn-primary" type="submit">Gửi OTP</button>
+            </div>
+            <div class="auth-card-footer">
+                <span>Đã có tài khoản?</span>
+                <a href="/dang-nhap">Đăng nhập</a>
+            </div>
+        </form>
+    </div>
+</section>
