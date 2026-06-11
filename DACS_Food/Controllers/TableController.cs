@@ -43,6 +43,7 @@ namespace DACS_Food.Controllers
 
             if (!User.IsInRole("Admin"))
             {
+                model.Status = ReservationStatus.Pending;
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 var limit = _reservationRateLimitService.CanCreateReservation(ipAddress, model.PhoneNumber);
                 if (!limit.Allowed)

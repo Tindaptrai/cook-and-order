@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Cách chọn thực phẩm";
 }
 
@@ -8,17 +8,24 @@
 
 <section class="food-guide-hero">
     <div class="container food-guide-hero-inner">
-        <div>
-            <p class="section-eyebrow">FoodieTTTM guide</p>
-            <h1>Cách chọn thực phẩm tươi, sạch và an toàn</h1>
+        <div class="food-guide-hero-copy">
+            <p class="section-eyebrow">FoodieTTTM fresh guide</p>
+            <h1>Chọn thực phẩm tươi, sạch và an toàn hơn mỗi ngày</h1>
+            <p>Cẩm nang giúp khách nhận biết nguyên liệu nên mua, dấu hiệu cần tránh và cách bảo quản phù hợp trước khi chế biến.</p>
+        </div>
+        <div class="food-guide-hero-panel">
+            <div><strong>32</strong><span>Thực phẩm</span></div>
+            <div><strong>7</strong><span>Nhóm nguyên liệu</span></div>
+            <div><strong>4</strong><span>Tiêu chí kiểm tra</span></div>
         </div>
     </div>
 </section>
 
 <section class="food-guide-section" id="foodGuideCatalog">
     <div class="container">
-        <div class="food-guide-toolbar">
+        <div class="food-guide-command">
             <div>
+                <p class="section-eyebrow">Tra cứu nhanh</p>
                 <h2>Danh sách thực phẩm</h2>
                 <p id="foodGuideResultText">Đang hiển thị tất cả thực phẩm.</p>
             </div>
@@ -42,8 +49,15 @@
         <div class="food-guide-grid" id="foodGuideGrid"></div>
 
         <div class="food-guide-safety-note">
-            <h2>Lưu ý an toàn thực phẩm</h2>
-            <p>Khi chọn mua thực phẩm, nên ưu tiên nguyên liệu tươi, có nguồn gốc rõ ràng, không có mùi lạ, không bị dập nát, biến màu hoặc chảy dịch bất thường. Luôn rửa tay, rửa sạch nguyên liệu trước khi chế biến, tách riêng thực phẩm sống và chín, đồng thời nấu chín kỹ thịt, cá, trứng và hải sản để đảm bảo an toàn.</p>
+            <div>
+                <p class="section-eyebrow">Nguyên tắc an toàn</p>
+                <h2>Kiểm tra trước khi mua và trước khi nấu</h2>
+            </div>
+            <div class="food-guide-safety-grid">
+                <span>Ưu tiên nguồn gốc rõ ràng, bao bì nguyên vẹn.</span>
+                <span>Không dùng thực phẩm đổi màu, nhớt hoặc có mùi lạ.</span>
+                <span>Tách riêng thực phẩm sống và chín khi bảo quản.</span>
+            </div>
         </div>
     </div>
 </section>
@@ -60,21 +74,23 @@
             <p class="section-eyebrow" id="foodGuideModalNameEn"></p>
             <h2 id="foodGuideModalNameVi"></h2>
             <p id="foodGuideModalDesc"></p>
-            <div class="food-guide-detail-block guide-choose">
-                <h3><span>✓</span> Cách chọn</h3>
-                <ul id="foodGuideModalChooseTips"></ul>
-            </div>
-            <div class="food-guide-detail-block guide-avoid">
-                <h3><span>!</span> Nên tránh</h3>
-                <ul id="foodGuideModalAvoidSigns"></ul>
-            </div>
-            <div class="food-guide-detail-block guide-storage">
-                <h3><span>↧</span> Bảo quản</h3>
-                <ul id="foodGuideModalStorage"></ul>
-            </div>
-            <div class="food-guide-detail-block guide-safety">
-                <h3><span>i</span> An toàn</h3>
-                <p id="foodGuideModalSafety"></p>
+            <div class="food-guide-detail-grid">
+                <div class="food-guide-detail-block guide-choose">
+                    <h3><span>✓</span> Cách chọn</h3>
+                    <ul id="foodGuideModalChooseTips"></ul>
+                </div>
+                <div class="food-guide-detail-block guide-avoid">
+                    <h3><span>!</span> Nên tránh</h3>
+                    <ul id="foodGuideModalAvoidSigns"></ul>
+                </div>
+                <div class="food-guide-detail-block guide-storage">
+                    <h3><span>BQ</span> Bảo quản</h3>
+                    <ul id="foodGuideModalStorage"></ul>
+                </div>
+                <div class="food-guide-detail-block guide-safety">
+                    <h3><span>AT</span> An toàn</h3>
+                    <p id="foodGuideModalSafety"></p>
+                </div>
             </div>
         </div>
     </article>
@@ -83,4 +99,3 @@
 @section Scripts {
     <script src="~/assets/js/food-guide.js" asp-append-version="true"></script>
 }
-
