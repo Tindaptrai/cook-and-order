@@ -1,5 +1,6 @@
 namespace DACS_Food.Models
 {
+    // Model dai dien cho mot mon an trong menu, gom thong tin hien thi, gia, nguyen lieu va trang thai ban.
     public class FoodItem
     {
         public int Id { get; set; }
@@ -19,6 +20,7 @@ namespace DACS_Food.Models
         public int Calories { get; set; }
         public string ServingSize { get; set; } = string.Empty;
         public string Story { get; set; } = string.Empty;
+        // Thong tin an toan/di ung duoc hien thi o chi tiet mon an de nguoi dung can nhac truoc khi dat.
         public string AllergyNote { get; set; } = string.Empty;
         public string Allergens { get; set; } = string.Empty;
         public string SpiceLevel { get; set; } = string.Empty;

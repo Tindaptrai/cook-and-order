@@ -19,10 +19,12 @@ namespace DACS_Food.Services
             page = Math.Max(1, page);
             pageSize = Math.Max(1, pageSize);
 
+            // Nguon du lieu chinh cua phan Mon an: chi hien thi mon dang hoat dong va con ban.
             var query = _db.FoodItems
                 .Include(x => x.FoodCategory)
                 .Where(x => x.IsActive && x.IsAvailable);
 
+            // Cac bo loc nay phuc vu man hinh Menu: danh muc, tu khoa, nhom mon va danh muc con.
             if (!string.IsNullOrWhiteSpace(category) && category != "all")
             {
                 query = query.Where(x => x.FoodCategory != null && x.FoodCategory.Slug == category);
@@ -47,6 +49,7 @@ namespace DACS_Food.Services
             var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
             page = Math.Min(page, totalPages);
 
+            // Sap xep uu tien mon noi bat/best seller, sau do moi phan trang de giu giao dien gon.
             var items = await query
                 .OrderByDescending(x => x.IsBestSeller)
                 .ThenBy(x => x.Name)
@@ -82,6 +85,7 @@ namespace DACS_Food.Services
 
         public async Task<IReadOnlyList<FoodItem>> GetRelatedAsync(FoodItem food, int count)
         {
+            // Goi y mon lien quan dua tren cung danh muc hoac cung nhom mon trong trang chi tiet.
             return await _db.FoodItems
                 .Include(x => x.FoodCategory)
                 .Where(x =>

@@ -1,6 +1,7 @@
 ﻿@model DACS_Food.Models.Recipe
 @{
     ViewData["Title"] = Model.Title;
+    // Cong thuc luu nguyen lieu/cac buoc bang dau ';' de view tach thanh danh sach de doc.
     var ingredients = Model.Ingredients.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     var steps = Model.Steps.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }

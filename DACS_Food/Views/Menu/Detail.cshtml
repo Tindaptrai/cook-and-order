@@ -3,6 +3,7 @@
 @using System.Globalization
 @{
     ViewData["Title"] = Model.Name;
+    // Du lieu lien quan duoc MenuController gan vao ViewBag de hien thi goi y mon cung nhom.
     var relatedFoods = ViewBag.RelatedFoods as IReadOnlyList<DACS_Food.Models.FoodItem> ?? Array.Empty<DACS_Food.Models.FoodItem>();
     var effectivePrice = Model.DiscountPrice ?? Model.Price;
 }
@@ -75,6 +76,7 @@
 
 @if (relatedFoods.Any())
 {
+    @* Khu vuc goi y mon lien quan giup nguoi dung tiep tuc kham pha menu ma khong doi luong dat hang. *@
     <section class="section section-soft">
         <div class="container">
             <div class="section-head">

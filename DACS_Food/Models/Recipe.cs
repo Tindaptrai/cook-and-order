@@ -1,5 +1,6 @@
 namespace DACS_Food.Models
 {
+    // Model cong thuc nau an: luu nguyen lieu, cac buoc lam, thoi gian va ghi chu an toan.
     public class Recipe
     {
         public int Id { get; set; }
@@ -17,6 +18,7 @@ namespace DACS_Food.Models
         public string CookTime { get; set; } = string.Empty;
         public string Servings { get; set; } = string.Empty;
         public string Tips { get; set; } = string.Empty;
+        // Hai ghi chu nay giup trang cong thuc nhac nguoi dung ve an toan thuc pham va di ung.
         public string SafetyNote { get; set; } = string.Empty;
         public string AllergyNote { get; set; } = string.Empty;
         public int CookingTimeMinutes { get; set; }

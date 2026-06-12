@@ -17,6 +17,7 @@ namespace DACS_Food.Controllers.Api
         [HttpGet]
         public async Task<IActionResult> GetFoods(string? category, string? keyword, string? mainCategory, string? subcategory, int page = 1, int pageSize = 12)
         {
+            // API cap du lieu cho menu.js: loc, phan trang va tra ve danh sach mon an theo DTO gon.
             var model = await _foodService.GetMenuAsync(category, keyword, page, pageSize, mainCategory, subcategory);
             return Ok(new
             {
@@ -54,6 +55,7 @@ namespace DACS_Food.Controllers.Api
 
         private static object ToFoodDto(DACS_Food.Models.FoodItem x)
         {
+            // Chi expose cac truong can cho giao dien Menu, tranh gui du lieu khong lien quan.
             return new
             {
                 x.Id,
