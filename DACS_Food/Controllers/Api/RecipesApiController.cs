@@ -23,6 +23,7 @@ namespace DACS_Food.Controllers.Api
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 4)
         {
+            // API cap du lieu cho recipes.js: ho tro loc danh muc, tim kiem va phan trang cong thuc.
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
@@ -75,6 +76,7 @@ namespace DACS_Food.Controllers.Api
 
         private static object MapRecipe(Recipe recipe)
         {
+            // Chuyen Recipe thanh cau truc de frontend render card va modal chi tiet cong thuc.
             return new
             {
                 id = recipe.Id,

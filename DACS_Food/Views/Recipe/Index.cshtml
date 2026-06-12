@@ -17,6 +17,7 @@
 
 <section class="recipes-section" id="recipesCatalog">
     <div class="container">
+        @* Phan filter, grid va pagination thuoc chuc nang Cong thuc; recipes.js nap du lieu tu /api/recipes. *@
         <div class="recipes-toolbar">
             <div>
                 <h2>Danh sách công thức</h2>
@@ -50,6 +51,7 @@
     </div>
 </section>
 
+@* Modal chi tiet cong thuc gom nguyen lieu, cac buoc lam, meo nho va ghi chu an toan. *@
 <div class="recipe-modal" id="recipeModal" aria-hidden="true">
     <div class="recipe-modal-backdrop" onclick="closeRecipeModal()"></div>
     <article class="recipe-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="recipeModalName">
