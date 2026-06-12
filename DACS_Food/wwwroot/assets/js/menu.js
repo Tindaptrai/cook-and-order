@@ -335,6 +335,7 @@ const DEDICATED_MENU_ITEMS = [
 
 let activeMenuCategory = 'all';
 let activeMenuSubcategory = 'all';
+let activeMenuKeyword = '';
 let apiMenuItems = [];
 let apiMenuLoaded = false;
 
@@ -460,11 +461,21 @@ function openMenuCardDetail(card) {
 }
 
 function getFilteredMenuItems() {
+  const keyword = normalizeMenuImageKey(activeMenuKeyword);
   const sourceItems = getMenuSource();
   return sourceItems.filter(item => {
     const matchCategory = activeMenuCategory === 'all' || item.category === activeMenuCategory;
     const matchSubcategory = activeMenuSubcategory === 'all' || item.subcategory === activeMenuSubcategory;
-    return matchCategory && matchSubcategory;
+    const searchText = normalizeMenuImageKey([
+      item.name,
+      item.category,
+      item.subcategory,
+      item.description,
+      item.story,
+      Array.isArray(item.ingredients) ? item.ingredients.join(' ') : item.ingredients
+    ].join(' '));
+    const matchKeyword = !keyword || searchText.includes(keyword);
+    return matchCategory && matchSubcategory && matchKeyword;
   });
 }
 
@@ -519,6 +530,7 @@ function menuCardTemplate(item) {
           <span>${escapeHtml(item.subcategory)}</span>
         </div>
         <div class="menu-card-body">
+          <span class="menu-feature-badge">Món ăn</span>
           <div class="menu-card-meta">
             <p>${escapeHtml(item.category)}</p>
             <em class="${item.isAvailable === false ? 'unavailable' : 'available'}">${item.isAvailable === false ? 'Hết món' : 'Còn món'}</em>
@@ -533,6 +545,7 @@ function menuCardTemplate(item) {
             <div class="menu-card-price">${menuPriceTemplate(item)}</div>
           </div>
           <div class="menu-card-actions">
+            <a class="small-btn neutral" href="${escapeHtml(detailUrl)}" onclick="event.stopPropagation()">Xem chi tiết</a>
             <div class="menu-quantity-control" onclick="event.stopPropagation()">
               <button type="button" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation(); changeMenuQuantity(${item.id}, -1)">-</button>
               <input id="menuQty-${item.id}" type="number" min="1" max="${MENU_MAX_QUANTITY}" value="1" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation()" oninput="normalizeMenuQuantity(this)" />
@@ -549,17 +562,23 @@ function menuCardTemplate(item) {
 function renderDedicatedMenu() {
   const grid = document.getElementById('dedicatedMenuGrid');
   const resultText = document.getElementById('menuResultText');
+  const totalCount = document.getElementById('menuTotalCount');
+  const emptyState = document.getElementById('menuEmptyState');
   if (!grid) return;
 
   renderMenuCategoryNav();
   const items = getFilteredMenuItems();
-  grid.innerHTML = items.map(menuCardTemplate).join('');
+  grid.innerHTML = items.length ? items.map(menuCardTemplate).join('') : '';
 
   if (resultText) {
     const categoryText = activeMenuCategory === 'all' ? 'tất cả danh mục' : activeMenuCategory;
     const subText = activeMenuSubcategory === 'all' ? '' : ` - ${activeMenuSubcategory}`;
-    resultText.textContent = `Đang hiển thị ${items.length} món trong ${categoryText}${subText}.`;
+    const keywordText = activeMenuKeyword ? `, từ khóa "${activeMenuKeyword}"` : '';
+    resultText.textContent = `Đang hiển thị ${items.length} món trong ${categoryText}${subText}${keywordText}.`;
   }
+
+  if (totalCount) totalCount.textContent = items.length;
+  if (emptyState) emptyState.hidden = items.length > 0;
 }
 
 function openMenuDetail(id) {
@@ -613,6 +632,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       activeMenuSubcategory = 'all';
       renderDedicatedMenu();
     });
+  });
+
+  document.getElementById('menuQuickSearch')?.addEventListener('input', event => {
+    activeMenuKeyword = event.target.value.trim();
+    renderDedicatedMenu();
   });
 
   renderDedicatedMenu();

@@ -277,6 +277,7 @@ const RECIPES = [
 ];
 
 let activeRecipeCategory = 'all';
+let activeRecipeKeyword = '';
 let currentRecipePage = 1;
 let apiRecipes = [];
 let apiRecipesLoaded = false;
@@ -285,8 +286,32 @@ function getRecipeSource() {
   return apiRecipesLoaded && apiRecipes.length ? apiRecipes : RECIPES;
 }
 
+function normalizeRecipeSearchValue(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
+}
+
 function getFilteredRecipes() {
-  return getRecipeSource().filter(recipe => activeRecipeCategory === 'all' || recipe.category === activeRecipeCategory);
+  const keyword = normalizeRecipeSearchValue(activeRecipeKeyword);
+  return getRecipeSource().filter(recipe => {
+    const matchCategory = activeRecipeCategory === 'all' || recipe.category === activeRecipeCategory;
+    const searchText = normalizeRecipeSearchValue([
+      recipe.name,
+      recipe.categoryLabel,
+      recipe.shortDesc,
+      recipe.difficulty,
+      recipe.prepTime,
+      recipe.cookTime,
+      Array.isArray(recipe.ingredients) ? recipe.ingredients.join(' ') : '',
+      Array.isArray(recipe.steps) ? recipe.steps.join(' ') : ''
+    ].join(' '));
+    const matchKeyword = !keyword || searchText.includes(keyword);
+    return matchCategory && matchKeyword;
+  });
 }
 
 function getPagedRecipes() {
@@ -303,13 +328,14 @@ function recipeCardTemplate(recipe) {
           <span>${escapeHtml(recipe.categoryLabel)}</span>
         </div>
         <div class="recipe-card-body">
+          <span class="recipe-feature-badge">Công thức</span>
           <h3>${escapeHtml(recipe.name)}</h3>
           <p>${escapeHtml(recipe.shortDesc)}</p>
           <div class="recipe-card-meta">
             <span>${escapeHtml(recipe.cookTime)}</span>
             <span>${escapeHtml(recipe.difficulty)}</span>
           </div>
-          <strong>Xem công thức</strong>
+          <strong>Xem chi tiết</strong>
         </div>
       </button>
     </article>
@@ -319,6 +345,8 @@ function recipeCardTemplate(recipe) {
 function renderRecipes() {
   const grid = document.getElementById('recipesGrid');
   const resultText = document.getElementById('recipeResultText');
+  const totalCount = document.getElementById('recipeTotalCount');
+  const emptyState = document.getElementById('recipeEmptyState');
   if (!grid) return;
 
   const filtered = getFilteredRecipes();
@@ -326,17 +354,18 @@ function renderRecipes() {
   if (currentRecipePage > maxPage) currentRecipePage = maxPage;
 
   const pageItems = getPagedRecipes();
-  grid.innerHTML = pageItems.length
-    ? pageItems.map(recipeCardTemplate).join('')
-    : '<p class="recipe-empty">Chưa có công thức trong trang này.</p>';
+  grid.innerHTML = pageItems.length ? pageItems.map(recipeCardTemplate).join('') : '';
 
   if (resultText) {
     const label = activeRecipeCategory === 'all'
       ? 'tất cả danh mục'
       : document.querySelector(`.recipe-filter-buttons [data-category="${activeRecipeCategory}"]`)?.textContent || activeRecipeCategory;
-    resultText.textContent = `Đang hiển thị ${pageItems.length}/${filtered.length} công thức thuộc ${label}, trang ${currentRecipePage}/4.`;
+    const keywordText = activeRecipeKeyword ? `, từ khóa "${activeRecipeKeyword}"` : '';
+    resultText.textContent = `Đang hiển thị ${pageItems.length}/${filtered.length} công thức thuộc ${label}${keywordText}, trang ${currentRecipePage}/${maxPage}.`;
   }
 
+  if (totalCount) totalCount.textContent = filtered.length;
+  if (emptyState) emptyState.hidden = filtered.length > 0;
   updateRecipePagination(maxPage);
 }
 
@@ -436,6 +465,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentRecipePage = 1;
       renderRecipes();
     });
+  });
+
+  document.getElementById('recipeQuickSearch')?.addEventListener('input', event => {
+    activeRecipeKeyword = event.target.value.trim();
+    currentRecipePage = 1;
+    renderRecipes();
   });
 
   document.querySelectorAll('.recipe-pagination [data-page]').forEach(button => {

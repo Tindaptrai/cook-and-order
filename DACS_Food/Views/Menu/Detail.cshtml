@@ -32,6 +32,7 @@
             </div>
 
             <h2>@Model.Name</h2>
+            <a class="btn btn-outline-secondary btn-sm food-detail-back" href="/menu">Quay lại thực đơn</a>
             <div class="food-detail-price">
                 <strong>@effectivePrice.ToString("N0")đ</strong>
                 @if (Model.DiscountPrice.HasValue && Model.DiscountPrice.Value < Model.Price)
@@ -43,12 +44,14 @@
             <p>@(string.IsNullOrWhiteSpace(Model.DetailDescription) ? Model.Story : Model.DetailDescription)</p>
 
             <div class="food-detail-facts">
-                <div><span>Calo</span><strong>@(Model.Calories > 0 ? $"{Model.Calories} kcal" : "Đang cập nhật")</strong></div>
+                <div><span>Năng lượng</span><strong>@(Model.Calories > 0 ? $"{Model.Calories} kcal" : "Đang cập nhật")</strong></div>
                 <div><span>Khẩu phần</span><strong>@(string.IsNullOrWhiteSpace(Model.ServingSize) ? "1 người" : Model.ServingSize)</strong></div>
+                <div><span>Trạng thái</span><strong>@(Model.IsAvailable ? "Sẵn sàng phục vụ" : "Tạm hết")</strong></div>
+                <div><span>Nhóm món</span><strong>@(Model.FoodCategory?.Name ?? Model.Category)</strong></div>
             </div>
 
             <div class="food-detail-info-block">
-                <h3>Thành phần/nguyên liệu</h3>
+                <h3>Nguyên liệu chính</h3>
                 <p>@Model.Ingredients</p>
             </div>
 
@@ -58,7 +61,7 @@
             </div>
 
             <div class="food-detail-alert">
-                <h3>Dị ứng</h3>
+                <h3>Lưu ý dị ứng</h3>
                 <p>@(string.IsNullOrWhiteSpace(Model.Allergens) ? Model.AllergyNote : Model.Allergens)</p>
             </div>
 
@@ -81,8 +84,8 @@
         <div class="container">
             <div class="section-head">
                 <div class="section-title">
-                    <h2>Món liên quan</h2>
-                    <p>Gợi ý các món cùng danh mục hoặc cùng nhóm món để bạn dễ chọn thêm.</p>
+                    <h2>Có thể bạn cũng thích</h2>
+                    <p>Gợi ý các món cùng danh mục hoặc cùng nhóm để bạn chọn thêm dễ hơn.</p>
                 </div>
             </div>
             <div class="food-grid">
@@ -99,7 +102,7 @@
                                 <p>@item.Description</p>
                                 <div class="food-bottom">
                                     <span class="price">@((item.DiscountPrice ?? item.Price).ToString("N0"))đ</span>
-                                    <span class="small-btn">Xem chi tiết</span>
+                                    <span class="small-btn">Xem món</span>
                                 </div>
                             </div>
                         </a>
