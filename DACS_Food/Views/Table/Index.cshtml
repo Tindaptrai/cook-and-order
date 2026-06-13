@@ -7,6 +7,7 @@
     var privateTables = Model.Tables.Count(x => x.TableType == TableType.Private);
     var pendingReservations = Model.Reservations.Count(x => x.Status == ReservationStatus.Pending);
     var confirmedReservations = Model.Reservations.Count(x => x.Status == ReservationStatus.Confirmed);
+    var suggestedFoods = Model.SuggestedFoodItems;
 }
 
 @section Styles {
@@ -116,6 +117,30 @@
                                 <span>Ghi chú</span>
                                 <textarea name="Note" rows="3" placeholder="Sinh nhật, ghế trẻ em, vị trí yên tĩnh..."></textarea>
                             </label>
+                            @if (suggestedFoods.Any())
+                            {
+                                <div class="reservation-food-picker">
+                                    <div class="reservation-food-head">
+                                        <span>Chọn món trước</span>
+                                        <small>Nhân viên sẽ chuẩn bị gợi ý này khi xác nhận bàn</small>
+                                    </div>
+                                    <div class="reservation-food-grid">
+                                        @foreach (var food in suggestedFoods)
+                                        {
+                                            <label class="reservation-food-choice">
+                                                <input type="checkbox" name="SelectedFoodItemIds" value="@food.Id" />
+                                                <span class="reservation-food-image">
+                                                    <img src="@food.ImageUrl" alt="@food.Name" />
+                                                </span>
+                                                <span class="reservation-food-copy">
+                                                    <strong>@food.Name</strong>
+                                                    <small>@food.Category • @food.Price.ToString("N0")đ</small>
+                                                </span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
                         </div>
                         <p class="reservation-feedback" id="publicReservationFeedback" aria-live="polite" hidden></p>
                         <button class="btn btn-primary reservation-submit" type="submit">Gửi yêu cầu đặt bàn</button>
@@ -170,6 +195,30 @@
                                 <span>Ghi chú</span>
                                 <textarea name="Note" rows="3" placeholder="Ghi chú nếu có"></textarea>
                             </label>
+                            @if (suggestedFoods.Any())
+                            {
+                                <div class="reservation-food-picker">
+                                    <div class="reservation-food-head">
+                                        <span>Chọn món trước</span>
+                                        <small>Gắn món khách muốn ăn vào ghi chú đặt bàn</small>
+                                    </div>
+                                    <div class="reservation-food-grid">
+                                        @foreach (var food in suggestedFoods)
+                                        {
+                                            <label class="reservation-food-choice">
+                                                <input type="checkbox" name="SelectedFoodItemIds" value="@food.Id" />
+                                                <span class="reservation-food-image">
+                                                    <img src="@food.ImageUrl" alt="@food.Name" />
+                                                </span>
+                                                <span class="reservation-food-copy">
+                                                    <strong>@food.Name</strong>
+                                                    <small>@food.Category • @food.Price.ToString("N0")đ</small>
+                                                </span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
                             <label>
                                 <span>Trạng thái</span>
                                 <select name="Status">
@@ -198,6 +247,10 @@
                                 <div class="reservation-admin-item @reservationStatusClass">
                                     <b>Bàn @reservation.RestaurantTable?.TableNumber</b>
                                     <span>@reservation.StartAt.ToString("dd/MM HH:mm") - @reservation.CustomerName</span>
+                                    @if (!string.IsNullOrWhiteSpace(reservation.Note))
+                                    {
+                                        <small>@reservation.Note</small>
+                                    }
                                 </div>
                             }
                         </div>
@@ -296,7 +349,12 @@ else
                 const feedback = document.getElementById('publicReservationFeedback');
                 const dateInput = document.getElementById('publicReservationDate');
                 const slotInput = document.getElementById('publicTimeSlot');
-                const data = Object.fromEntries(new FormData(form).entries());
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                const selectedFoodItemIds = formData
+                    .getAll('SelectedFoodItemIds')
+                    .map(value => Number(value))
+                    .filter(value => Number.isInteger(value) && value > 0);
 
                 if (submitButton) submitButton.disabled = true;
                 if (feedback) {
@@ -314,7 +372,8 @@ else
                             timeSlot: data.TimeSlot,
                             customerName: data.CustomerName,
                             phoneNumber: data.PhoneNumber,
-                            note: data.Note || ''
+                            note: data.Note || '',
+                            selectedFoodItemIds
                         })
                     });
                     const result = await response.json();

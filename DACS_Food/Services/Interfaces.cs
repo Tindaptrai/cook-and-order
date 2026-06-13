@@ -60,6 +60,7 @@ namespace DACS_Food.Services
     public interface ITableService
     {
         Task<IReadOnlyList<RestaurantTable>> GetActiveTablesAsync();
+        Task<IReadOnlyList<ReservationFoodChoiceViewModel>> GetReservationFoodChoicesAsync(int take = 6);
         Task<bool> UpdateStatusAsync(int tableId, TableStatus status);
         Task<TablePageViewModel> GetTablePageAsync(DateOnly? date = null);
         Task<IReadOnlyList<ReservationSlotViewModel>> GetReservationSlotsAsync(DateOnly date, int tableId);

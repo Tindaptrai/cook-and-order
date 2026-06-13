@@ -3294,6 +3294,79 @@ body.modal-open {
   flex: 0 0 auto;
 }
 
+.admin-preorder-picker {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 18px;
+  background: #fff7ed;
+}
+
+.admin-preorder-picker strong,
+.admin-preorder-picker span {
+  display: block;
+}
+
+.admin-preorder-picker strong {
+  color: #111827;
+  font-size: 15px;
+}
+
+.admin-preorder-picker span {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-preorder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-preorder-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  background: #fff;
+  color: #111827;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-preorder-item input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  accent-color: #f97316;
+}
+
+.admin-preorder-item span {
+  margin: 0;
+  color: #111827;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.admin-preorder-item small {
+  color: #ea580c;
+  white-space: nowrap;
+}
+
+.reservation-note-text {
+  white-space: pre-line;
+}
+
 .admin-table-wrap {
   overflow-x: auto;
   width: 100%;

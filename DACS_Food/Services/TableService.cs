@@ -23,6 +23,27 @@ namespace DACS_Food.Services
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<ReservationFoodChoiceViewModel>> GetReservationFoodChoicesAsync(int take = 6)
+        {
+            return await _db.FoodItems
+                .Where(x => x.IsActive && x.IsAvailable)
+                .OrderByDescending(x => x.IsBestSeller)
+                .ThenByDescending(x => x.IsFeatured)
+                .ThenBy(x => x.Name)
+                .Take(take)
+                .Select(x => new ReservationFoodChoiceViewModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Category = x.Category,
+                    Tag = x.Tag,
+                    ImageUrl = x.ImageUrl,
+                    Price = x.DiscountPrice ?? x.Price,
+                    IsBestSeller = x.IsBestSeller
+                })
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateStatusAsync(int tableId, TableStatus status)
         {
             var table = await _db.RestaurantTables.FindAsync(tableId);
@@ -72,7 +93,8 @@ namespace DACS_Food.Services
                     Capacity = x.Capacity,
                     IsBusy = x.Status == TableStatus.Occupied || busyTableIds.Contains(x.Id)
                 }).ToList(),
-                Reservations = reservations
+                Reservations = reservations,
+                SuggestedFoodItems = await GetReservationFoodChoicesAsync()
             };
         }
 
@@ -145,6 +167,8 @@ namespace DACS_Food.Services
                 return (false, "FoodieTTTM chỉ nhận đặt bàn từ 08:30 đến 21:00 để quán có đủ thời gian chuẩn bị và phục vụ trước giờ đóng cửa.");
             }
 
+            var reservationNote = await BuildReservationNoteAsync(model);
+
             _db.TableReservations.Add(new TableReservation
             {
                 RestaurantTableId = model.TableId,
@@ -152,7 +176,7 @@ namespace DACS_Food.Services
                 DurationMinutes = 90,
                 CustomerName = model.CustomerName.Trim(),
                 PhoneNumber = model.PhoneNumber.Trim(),
-                Note = string.IsNullOrWhiteSpace(model.Note) ? null : model.Note.Trim(),
+                Note = reservationNote,
                 Status = model.Status
             });
 
@@ -188,6 +212,42 @@ namespace DACS_Food.Services
 
             await _db.SaveChangesAsync();
             return (true, "Đã cập nhật trạng thái đặt bàn.");
+        }
+
+        private async Task<string?> BuildReservationNoteAsync(CreateTableReservationViewModel model)
+        {
+            var noteParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(model.Note))
+            {
+                noteParts.Add(model.Note.Trim());
+            }
+
+            var selectedFoodIds = model.SelectedFoodItemIds
+                .Where(id => id > 0)
+                .Distinct()
+                .Take(6)
+                .ToList();
+
+            if (selectedFoodIds.Count > 0)
+            {
+                var selectedFoods = await _db.FoodItems
+                    .Where(x => selectedFoodIds.Contains(x.Id) && x.IsActive && x.IsAvailable)
+                    .Select(x => new { x.Id, x.Name, Price = x.DiscountPrice ?? x.Price })
+                    .ToListAsync();
+
+                var foodLabels = selectedFoodIds
+                    .Select(id => selectedFoods.FirstOrDefault(food => food.Id == id))
+                    .Where(food => food != null)
+                    .Select(food => $"{food!.Name} ({food.Price:N0}đ)")
+                    .ToList();
+
+                if (foodLabels.Count > 0)
+                {
+                    noteParts.Add("Món chọn trước: " + string.Join(", ", foodLabels));
+                }
+            }
+
+            return noteParts.Count == 0 ? null : string.Join(Environment.NewLine, noteParts);
         }
     }
 }

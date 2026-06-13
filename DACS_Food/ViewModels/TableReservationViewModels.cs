@@ -8,6 +8,7 @@ namespace DACS_Food.ViewModels
         public DateOnly SelectedDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public IReadOnlyList<PublicTableViewModel> Tables { get; set; } = Array.Empty<PublicTableViewModel>();
         public IReadOnlyList<TableReservation> Reservations { get; set; } = Array.Empty<TableReservation>();
+        public IReadOnlyList<ReservationFoodChoiceViewModel> SuggestedFoodItems { get; set; } = Array.Empty<ReservationFoodChoiceViewModel>();
     }
 
     public class AdminTablesViewModel
@@ -16,6 +17,7 @@ namespace DACS_Food.ViewModels
         public IReadOnlyList<RestaurantTable> Tables { get; set; } = Array.Empty<RestaurantTable>();
         public IReadOnlyList<int> BookedTableIds { get; set; } = Array.Empty<int>();
         public IReadOnlyList<TableReservation> Reservations { get; set; } = Array.Empty<TableReservation>();
+        public IReadOnlyList<ReservationFoodChoiceViewModel> SuggestedFoodItems { get; set; } = Array.Empty<ReservationFoodChoiceViewModel>();
         public int PendingReservations { get; set; }
         public int ConfirmedReservations { get; set; }
     }
@@ -35,6 +37,17 @@ namespace DACS_Food.ViewModels
         public string Time { get; set; } = string.Empty;
         public bool IsAvailable { get; set; }
         public string Label => IsAvailable ? Time : $"{Time} - bận";
+    }
+
+    public class ReservationFoodChoiceViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Tag { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public bool IsBestSeller { get; set; }
     }
 
     public class CreateTableReservationViewModel
@@ -58,6 +71,7 @@ namespace DACS_Food.ViewModels
 
         [StringLength(300, ErrorMessage = "Ghi chú tối đa 300 ký tự.")]
         public string? Note { get; set; }
+        public List<int> SelectedFoodItemIds { get; set; } = new();
         public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
     }
 }

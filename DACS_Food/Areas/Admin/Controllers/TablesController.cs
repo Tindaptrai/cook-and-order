@@ -51,6 +51,7 @@ namespace DACS_Food.Areas.Admin.Controllers
                 Tables = tables,
                 BookedTableIds = bookedTableIds,
                 Reservations = reservations,
+                SuggestedFoodItems = await _tableService.GetReservationFoodChoicesAsync(),
                 PendingReservations = reservations.Count(x => x.Status == ReservationStatus.Pending),
                 ConfirmedReservations = reservations.Count(x => x.Status == ReservationStatus.Confirmed)
             });

@@ -270,6 +270,104 @@
   box-shadow: 0 0 0 4px #ffedd5;
 }
 
+.reservation-food-picker {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff7ed, #f8fafc);
+}
+
+.reservation-food-head {
+  display: grid;
+  gap: 4px;
+}
+
+.reservation-food-head span {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.reservation-food-head small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reservation-food-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reservation-food-choice {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: rgba(255,255,255,.86);
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
+}
+
+.reservation-food-choice:hover,
+.reservation-food-choice:has(input:checked) {
+  transform: translateY(-1px);
+  border-color: #f97316;
+  background: #fff;
+  box-shadow: 0 12px 26px rgba(249, 115, 22, .14);
+}
+
+.reservation-food-choice input {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  accent-color: #f97316;
+}
+
+.reservation-food-image {
+  overflow: hidden;
+  border-radius: 12px;
+  aspect-ratio: 1;
+  background: #ffedd5;
+}
+
+.reservation-food-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reservation-food-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding-right: 18px;
+}
+
+.reservation-food-copy strong {
+  color: #111827;
+  font-size: 13px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.reservation-food-copy small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
 .reservation-submit {
   width: 100%;
   margin-top: 16px;
@@ -373,6 +471,13 @@
   color: #111827;
 }
 
+.reservation-admin-item small {
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
 @media (max-width: 1100px) {
   .reservation-layout {
     grid-template-columns: 1fr;
@@ -453,6 +558,10 @@
   }
 
   .reservation-table-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reservation-food-grid {
     grid-template-columns: 1fr;
   }
 }

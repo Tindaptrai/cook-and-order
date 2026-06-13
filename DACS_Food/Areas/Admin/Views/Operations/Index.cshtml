@@ -169,6 +169,10 @@
                                     <td>
                                         <strong>@reservation.CustomerName</strong>
                                         <small>@reservation.PhoneNumber</small>
+                                        @if (!string.IsNullOrWhiteSpace(reservation.Note))
+                                        {
+                                            <small class="reservation-note-text">@reservation.Note</small>
+                                        }
                                     </td>
                                     <td>@(reservation.RestaurantTable?.Name ?? $"Bàn #{reservation.RestaurantTableId}")</td>
                                     <td><span class="@ReservationBadge(reservation.Status)">@ReservationLabel(reservation.Status)</span></td>
