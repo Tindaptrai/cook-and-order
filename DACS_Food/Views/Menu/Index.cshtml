@@ -10,7 +10,13 @@
     <div class="container menu-hero-inner">
         <div>
             <p class="section-eyebrow">FoodieTTTM menu</p>
-            <h1>Thực đơn riêng cho món ăn & đồ uống</h1>
+            <h1>Thực đơn món ăn & đồ uống hôm nay</h1>
+            <p class="menu-hero-copy">Chọn nhanh món mặn, món chay, healthy hoặc đồ uống với thông tin giá, thành phần và ghi chú dị ứng rõ ràng.</p>
+            <div class="menu-hero-stats" aria-label="Tổng quan thực đơn">
+                <span><strong id="menuTotalCount">0</strong> món đang hiển thị</span>
+                <span><strong>4</strong> nhóm danh mục</span>
+                <span><strong>20</strong> món tối đa mỗi lần đặt</span>
+            </div>
         </div>
     </div>
 </section>
@@ -20,8 +26,8 @@
         @* Phan filter va grid nay thuoc chuc nang Mon an; du lieu duoc menu.js nap tu API /api/foods. *@
         <div class="menu-toolbar">
             <div>
-                <h2>Danh mục món</h2>
-                <p id="menuResultText">Đang hiển thị tất cả món.</p>
+                <h2>Khám phá danh mục món</h2>
+                <p id="menuResultText">Đang hiển thị tất cả món trong thực đơn.</p>
             </div>
             <div class="menu-filter-buttons" aria-label="Lọc thực đơn">
                 <button class="active" type="button" data-category="all">Tất cả</button>
@@ -31,6 +37,12 @@
                 <button type="button" data-category="Đồ uống">Đồ uống</button>
             </div>
         </div>
+
+        <div class="menu-search-panel">
+            <label for="menuQuickSearch">Tìm nhanh món ăn</label>
+            <input id="menuQuickSearch" type="search" class="form-control" placeholder="Nhập tên món, danh mục hoặc nguyên liệu..." autocomplete="off" />
+        </div>
+        <p class="menu-empty-state" id="menuEmptyState" hidden>Không tìm thấy kết quả phù hợp. Thử đổi từ khóa hoặc chọn danh mục khác.</p>
 
         <div class="menu-grid" id="dedicatedMenuGrid"></div>
     </div>
@@ -51,11 +63,11 @@
             <strong id="menuDetailPrice"></strong>
             <p id="menuDetailDescription"></p>
             <div class="menu-detail-block">
-                <h3>Câu chuyện món ăn</h3>
+                <h3>Câu chuyện và hương vị</h3>
                 <p id="menuDetailStory"></p>
             </div>
             <div class="menu-detail-block">
-                <h3>Thành phần chính</h3>
+                <h3>Nguyên liệu chính</h3>
                 <ul id="menuDetailIngredients"></ul>
             </div>
             <div class="menu-detail-alert">

@@ -9,12 +9,14 @@
 <section class="recipe-detail-page">
     <div class="container recipe-detail-grid">
         <div class="recipe-detail-copy">
-            <p class="section-eyebrow">Công thức FoodieTTTM</p>
+            <p class="section-eyebrow">Bếp nhà FoodieTTTM</p>
             <h1>@Model.Title</h1>
             <p>@Model.Description</p>
+            <a class="btn btn-outline-secondary btn-sm recipe-detail-back" href="/recipes">Quay lại danh sách công thức</a>
             <div class="recipe-meta">
                 <span>@Model.Difficulty</span>
-                <span>@Model.CookingTimeMinutes phút</span>
+                <span>@Model.CookingTimeMinutes phút thực hiện</span>
+                <span>@Model.Servings</span>
             </div>
         </div>
         <div class="recipe-detail-image">
@@ -26,7 +28,7 @@
 <section class="recipe-content-section">
     <div class="container recipe-content-grid">
         <div>
-            <h2>Nguyên liệu</h2>
+            <h2>Nguyên liệu cần chuẩn bị</h2>
             <ul class="recipe-list">
                 @foreach (var ingredient in ingredients)
                 {
@@ -35,7 +37,7 @@
             </ul>
         </div>
         <div>
-            <h2>Cách làm</h2>
+            <h2>Các bước nấu</h2>
             <ol class="recipe-list recipe-steps">
                 @foreach (var step in steps)
                 {
