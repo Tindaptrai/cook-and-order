@@ -1,231 +1,128 @@
-@model DACS_Food.ViewModels.TablePageViewModel
-@using DACS_Food.Models
+﻿@model DACS_Food.ViewModels.TablePageViewModel
 @{
     ViewData["Title"] = "Đặt bàn & Không gian";
-    var availableTables = Model.Tables.Count(x => !x.IsBusy);
-    var busyTables = Model.Tables.Count(x => x.IsBusy);
-    var privateTables = Model.Tables.Count(x => x.TableType == TableType.Private);
-    var pendingReservations = Model.Reservations.Count(x => x.Status == ReservationStatus.Pending);
-    var confirmedReservations = Model.Reservations.Count(x => x.Status == ReservationStatus.Confirmed);
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/assets/css/reservation.css" asp-append-version="true" />
-}
-
-<section class="reservation-hero">
-    <div class="container reservation-hero-grid">
-        <div class="reservation-hero-copy">
-            <p class="section-eyebrow">FoodieTTTM reservation</p>
-            <h1>Đặt bàn nhanh, chọn đúng không gian trước khi đến quán</h1>
-            <p>Chọn bàn, ngày và khung giờ phù hợp. Nhân viên sẽ gọi lại để xác nhận lịch và ghi chú phục vụ.</p>
-        </div>
-        <div class="reservation-hero-panel">
-            <div>
-                <span>@availableTables</span>
-                <p>Bàn còn trống</p>
-            </div>
-            <div>
-                <span>@busyTables</span>
-                <p>Bàn đang bận</p>
-            </div>
-            <div>
-                <span>@privateTables</span>
-                <p>Bàn private</p>
-            </div>
-        </div>
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">🪑 Đặt bàn & Không gian</div>
+        <h1>Không gian bàn tại FoodieTTTM</h1>
     </div>
 </section>
 
-<section class="reservation-section">
+<section class="section section-light">
     <div class="container">
         @if (TempData["TableMessage"] is string message)
         {
-            <p class="reservation-notice">@message</p>
+            <p class="table-notice">@message</p>
         }
 
-        <div class="reservation-layout">
-            <div class="reservation-floor">
-                <div class="reservation-section-head">
-                    <div>
-                        <p class="section-eyebrow">Sơ đồ bàn</p>
-                        <h2>Tình trạng bàn hiện tại</h2>
-                    </div>
-                    <div class="reservation-legend">
-                        <span><i class="is-open"></i>Còn trống</span>
-                        <span><i class="is-busy"></i>Đang bận</span>
-                    </div>
-                </div>
-
-                <div class="reservation-table-grid">
-                    @foreach (var table in Model.Tables)
-                    {
-                        var statusClass = table.IsBusy ? "is-busy" : "is-open";
-                        var tableTypeLabel = table.TableType == TableType.Private ? "Private" : "Thường";
-                        <button type="button"
-                                class="reservation-table-card @statusClass"
-                                data-reservation-table-id="@table.Id"
-                                onclick="selectReservationTable(@table.Id)"
-                                aria-label="Chọn bàn @table.TableNumber">
-                            <span class="reservation-table-status">@(table.IsBusy ? "Đang bận" : "Còn trống")</span>
-                            <strong>Bàn @table.TableNumber</strong>
-                            <small>@tableTypeLabel</small>
-                            <em>@table.Capacity người</em>
-                        </button>
-                    }
-                </div>
+        <div class="section-head">
+            <div class="section-title">
+                <div class="badge">Tình trạng hiện tại</div>
+                <h2>Bàn tại quán</h2>
+                <p>Trạng thái chỉ hiển thị công khai là Còn trống hoặc Đang bận.</p>
             </div>
+        </div>
 
-            <aside class="reservation-side">
-                @if (!User.IsInRole("Admin"))
-                {
-                    <form class="reservation-form-card" id="publicReservationForm" method="post" action="/ban/dat-ban">
-                        <div class="reservation-card-title">
-                            <p class="section-eyebrow">Yêu cầu đặt bàn</p>
-                            <h2>Giữ chỗ cho bữa ăn của bạn</h2>
-                        </div>
-                        <div class="reservation-form-grid">
-                            <label>
-                                <span>Ngày đến</span>
-                                <input id="publicReservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
-                            </label>
-                            <label>
-                                <span>Bàn muốn đặt</span>
-                                <select id="publicTableId" name="TableId" required>
-                                    @foreach (var table in Model.Tables)
-                                    {
-                                        <option value="@table.Id">Bàn @table.TableNumber - @(table.TableType == TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
-                                    }
-                                </select>
-                            </label>
-                            <label>
-                                <span>Khung giờ</span>
-                                <select id="publicTimeSlot" name="TimeSlot" required hidden>
-                                    <option value="">Chọn ngày và bàn để tải khung giờ</option>
-                                </select>
-                            </label>
-                            <label>
-                                <span>Họ tên</span>
-                                <input name="CustomerName" placeholder="Nguyễn Văn A" required />
-                            </label>
-                            <label>
-                                <span>Số điện thoại</span>
-                                <input name="PhoneNumber" placeholder="0900000000" required />
-                            </label>
-                            <label>
-                                <span>Ghi chú</span>
-                                <textarea name="Note" rows="3" placeholder="Sinh nhật, ghế trẻ em, vị trí yên tĩnh..."></textarea>
-                            </label>
-                        </div>
-                        <p class="reservation-feedback" id="publicReservationFeedback" aria-live="polite" hidden></p>
-                        <button class="btn btn-primary reservation-submit" type="submit">Gửi yêu cầu đặt bàn</button>
-                    </form>
-
-                    <div class="reservation-info-card">
-                        <p class="section-eyebrow">Quy trình xác nhận</p>
-                        <h3>Sau khi gửi yêu cầu</h3>
-                        <div class="reservation-steps">
-                            <span>Nhân viên kiểm tra bàn và khung giờ.</span>
-                            <span>Quán gọi lại để xác nhận thông tin.</span>
-                            <span>Đến đúng giờ để giữ trải nghiệm tốt nhất.</span>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <form class="reservation-form-card" method="post" action="/ban/dat-ban">
-                        <div class="reservation-card-title">
-                            <p class="section-eyebrow">Admin reservation</p>
-                            <h2>Tạo lịch đặt bàn</h2>
-                        </div>
-                        <div class="reservation-form-grid">
-                            <label>
-                                <span>Ngày đặt</span>
-                                <input id="reservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
-                            </label>
-                            <label>
-                                <span>Bàn</span>
-                                <select id="tableId" name="TableId" required>
-                                    @foreach (var table in Model.Tables)
-                                    {
-                                        <option value="@table.Id">Bàn @table.TableNumber - @(table.TableType == TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
-                                    }
-                                </select>
-                            </label>
-                            <label>
-                                <span>Khung giờ</span>
-                                <select id="timeSlot" name="TimeSlot" required>
-                                    <option value="">Chọn ngày và bàn để tải khung giờ</option>
-                                </select>
-                            </label>
-                            <label>
-                                <span>Tên khách</span>
-                                <input name="CustomerName" placeholder="Tên khách" required />
-                            </label>
-                            <label>
-                                <span>Số điện thoại</span>
-                                <input name="PhoneNumber" placeholder="Số điện thoại" required />
-                            </label>
-                            <label>
-                                <span>Ghi chú</span>
-                                <textarea name="Note" rows="3" placeholder="Ghi chú nếu có"></textarea>
-                            </label>
-                            <label>
-                                <span>Trạng thái</span>
-                                <select name="Status">
-                                    <option value="@ReservationStatus.Pending">Pending</option>
-                                    <option value="@ReservationStatus.Confirmed">Confirmed</option>
-                                </select>
-                            </label>
-                        </div>
-                        <button class="btn btn-primary reservation-submit" type="submit">Tạo lịch đặt bàn</button>
-                    </form>
-
-                    <div class="reservation-info-card reservation-admin-card">
-                        <div class="reservation-admin-stats">
-                            <div><strong>@pendingReservations</strong><span>Pending</span></div>
-                            <div><strong>@confirmedReservations</strong><span>Confirmed</span></div>
-                        </div>
-                        <h3>Lịch gần nhất</h3>
-                        <div class="reservation-admin-list">
-                            @if (!Model.Reservations.Any())
-                            {
-                                <span>Chưa có lịch đặt bàn cần xử lý.</span>
-                            }
-                            @foreach (var reservation in Model.Reservations.Take(6))
-                            {
-                                var reservationStatusClass = reservation.Status == ReservationStatus.Confirmed ? "confirmed" : "pending";
-                                <div class="reservation-admin-item @reservationStatusClass">
-                                    <b>Bàn @reservation.RestaurantTable?.TableNumber</b>
-                                    <span>@reservation.StartAt.ToString("dd/MM HH:mm") - @reservation.CustomerName</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-            </aside>
+        <div class="table-grid">
+            @foreach (var table in Model.Tables)
+            {
+                <div class="table-card @(table.IsBusy ? "occupied" : "")">
+                    <h3>Bàn @table.TableNumber</h3>
+                    <p>Loại bàn: @(table.TableType == DACS_Food.Models.TableType.Private ? "Private" : "Thường")</p>
+                    <p>Sức chứa: @table.Capacity người</p>
+                    <span class="status">@(table.IsBusy ? "Đang bận" : "Còn trống")</span>
+                </div>
+            }
         </div>
     </div>
 </section>
 
+@if (!User.IsInRole("Admin"))
+{
+    <section class="section section-soft">
+        <div class="container checkout-layout">
+            <form class="checkout-card light" id="publicReservationForm" method="post" action="/ban/dat-ban">
+                <h3>Gửi yêu cầu đặt bàn</h3>
+                <p>Thông tin này chỉ dùng để nhân viên FoodieTTTM gọi lại xác nhận. Quán không hiển thị thông tin cá nhân của bạn cho khách khác.</p>
+                <div class="form-group">
+                    <input id="publicReservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    <select id="publicTableId" name="TableId" required>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id">Bàn @table.TableNumber - @(table.TableType == DACS_Food.Models.TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
+                        }
+                    </select>
+                    <select id="publicTimeSlot" name="TimeSlot" required hidden>
+                        <option value="">Chọn ngày và bàn để tải khung giờ</option>
+                    </select>
+                    <input name="CustomerName" placeholder="Họ tên của bạn" required />
+                    <input name="PhoneNumber" placeholder="Số điện thoại để nhân viên xác nhận" required />
+                    <textarea name="Note" rows="3" placeholder="Ghi chú nếu có"></textarea>
+                    <input type="hidden" name="Status" value="@DACS_Food.Models.ReservationStatus.Pending" />
+                    <p class="reservation-feedback" id="publicReservationFeedback" aria-live="polite" hidden></p>
+                    <button class="btn btn-primary" type="submit">Gửi yêu cầu đặt bàn</button>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Sau khi gửi yêu cầu</h3>
+                <p>Nhân viên FoodieTTTM sẽ gọi lại trong ít phút để xác nhận bàn, thời gian và số điện thoại của bạn. Quán nhận đặt bàn từ 08:30 đến 21:00.</p>
+                <div class="policy-list">
+                    <p>Nếu cần đổi giờ hoặc đổi bàn, bạn có thể trao đổi trực tiếp khi nhân viên gọi xác nhận.</p>
+                    <p>Yêu cầu đặt bàn ở trạng thái Pending cho đến khi nhân viên xác nhận.</p>
+                    <p>Vui lòng đến đúng giờ đã xác nhận để quán phục vụ tốt hơn.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
 @if (User.IsInRole("Admin"))
 {
+    <section class="section section-soft">
+        <div class="container checkout-layout">
+            <form class="checkout-card light" method="post" action="/ban/dat-ban">
+                <h3>Admin đặt bàn</h3>
+                <p>Chọn ngày và bàn để hệ thống tải khung giờ 30 phút. Mỗi lượt đặt giữ bàn 90 phút. Quán nhận đặt bàn từ 08:30 đến 21:00.</p>
+                <div class="form-group">
+                    <input id="reservationDate" name="ReservationDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    <select id="tableId" name="TableId" required>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id">Bàn @table.TableNumber - @(table.TableType == DACS_Food.Models.TableType.Private ? "Private" : "Thường") - @table.Capacity người</option>
+                        }
+                    </select>
+                    <select id="timeSlot" name="TimeSlot" required>
+                        <option value="">Chọn ngày và bàn để tải khung giờ</option>
+                    </select>
+                    <input name="CustomerName" placeholder="Tên khách" required />
+                    <input name="PhoneNumber" placeholder="Số điện thoại" required />
+                    <textarea name="Note" rows="3" placeholder="Ghi chú nếu có"></textarea>
+                    <select name="Status">
+                        <option value="@DACS_Food.Models.ReservationStatus.Pending">Pending</option>
+                        <option value="@DACS_Food.Models.ReservationStatus.Confirmed">Confirmed</option>
+                    </select>
+                    <button class="btn btn-primary" type="submit">Tạo lịch đặt bàn</button>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Quy định đặt bàn</h3>
+                <p>FoodieTTTM sẽ giữ bàn theo lịch admin xác nhận. Nếu khách đến trễ hơn 15 phút mà chưa báo lại, quán có thể sắp xếp bàn cho khách khác.</p>
+                <div class="policy-list">
+                    <p>Không mang thức ăn hoặc đồ uống bên ngoài vào quán. Trường hợp đặc biệt như bánh sinh nhật, vui lòng báo trước để được hỗ trợ.</p>
+                    <p>Chỉ lịch Confirmed mới khóa khung giờ 90 phút. Pending chỉ là yêu cầu chờ xác nhận để tránh người lạ spam giữ hết bàn.</p>
+                    <p>Nếu bàn trống sớm, admin chuyển lượt đặt sang Completed để hệ thống mở lịch cho các khung giờ liên quan.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
     @section Scripts {
         <script>
-            function setActiveReservationCard(tableId) {
-                document.querySelectorAll('[data-reservation-table-id]').forEach(card => {
-                    card.classList.toggle('is-selected', card.dataset.reservationTableId === String(tableId));
-                });
-            }
-
-            function selectReservationTable(tableId) {
-                const tableInput = document.getElementById('tableId');
-                if (!tableInput) return;
-                tableInput.value = tableId;
-                setActiveReservationCard(tableId);
-                loadReservationSlots();
-            }
-
             async function loadReservationSlots() {
                 const dateInput = document.getElementById('reservationDate');
                 const tableInput = document.getElementById('tableId');
@@ -238,7 +135,6 @@
                 slotInput.innerHTML = slots.map(slot =>
                     `<option value="${slot.time}" ${slot.isAvailable ? '' : 'disabled'}>${slot.label}</option>`
                 ).join('');
-                setActiveReservationCard(tableInput.value);
             }
 
             document.addEventListener('DOMContentLoaded', () => {
@@ -255,20 +151,6 @@ else
 {
     @section Scripts {
         <script>
-            function setActiveReservationCard(tableId) {
-                document.querySelectorAll('[data-reservation-table-id]').forEach(card => {
-                    card.classList.toggle('is-selected', card.dataset.reservationTableId === String(tableId));
-                });
-            }
-
-            function selectReservationTable(tableId) {
-                const tableInput = document.getElementById('publicTableId');
-                if (!tableInput) return;
-                tableInput.value = tableId;
-                setActiveReservationCard(tableId);
-                loadPublicReservationSlots();
-            }
-
             async function loadPublicReservationSlots() {
                 const dateInput = document.getElementById('publicReservationDate');
                 const tableInput = document.getElementById('publicTableId');
@@ -283,7 +165,6 @@ else
                     slotInput.innerHTML = slots.map(slot =>
                         `<option value="${slot.time}" ${slot.isAvailable ? '' : 'disabled'}>${slot.label}</option>`
                     ).join('');
-                    setActiveReservationCard(tableInput.value);
                 } catch {
                     slotInput.innerHTML = '<option value="">Không tải được khung giờ</option>';
                 }
@@ -356,3 +237,4 @@ else
         </script>
     }
 }
+
