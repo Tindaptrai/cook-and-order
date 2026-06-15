@@ -157,13 +157,21 @@ namespace DACS_Food.Services
             if (!string.IsNullOrWhiteSpace(orderCode))
             {
                 var code = orderCode.Trim();
-                return await _db.Orders
+                var query = _db.Orders
                     .AsNoTracking()
                     .Include(x => x.Items)
                     .Include(x => x.Payment)
                     .Include(x => x.Shipment)
                     .Include(x => x.StatusHistories.OrderByDescending(h => h.CreatedAt))
-                    .Where(x => x.OrderCode == code)
+                    .Where(x => x.OrderCode == code);
+
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    var normalizedPhone = phone.Trim();
+                    query = query.Where(x => x.PhoneNumber == normalizedPhone);
+                }
+
+                return await query
                     .ToListAsync();
             }
 
@@ -329,6 +337,12 @@ namespace DACS_Food.Services
 
                 var validItems = items
                     .Where(x => x.Id > 0 && x.Quantity > 0)
+                    .GroupBy(x => x.Id)
+                    .Select(x => new
+                    {
+                        Id = x.Key,
+                        Quantity = Math.Min(20, x.Sum(item => Math.Clamp(item.Quantity, 1, 20)))
+                    })
                     .ToList();
 
                 if (!validItems.Any())
@@ -338,7 +352,7 @@ namespace DACS_Food.Services
 
                 var foodIds = validItems.Select(x => x.Id).Distinct().ToList();
                 var foods = await _db.FoodItems
-                    .Where(x => foodIds.Contains(x.Id) && x.IsActive)
+                    .Where(x => foodIds.Contains(x.Id) && x.IsActive && x.IsAvailable)
                     .ToDictionaryAsync(x => x.Id);
 
                 return validItems

@@ -48,7 +48,7 @@
         }
         else
         {
-            <p>Nhập mã đơn hàng hoặc số điện thoại đã dùng khi đặt món để xem trạng thái giao hàng.</p>
+            <p>Nhập mã đơn hàng kèm số điện thoại đã dùng khi đặt món để xem trạng thái giao hàng chính xác hơn.</p>
         }
     </div>
 </section>
@@ -58,12 +58,12 @@
         <form class="tracking-form simple-card" method="post" action="/tra-cuu-don-hang">
             <div class="form-group">
                 <input name="OrderCode" value="@Model.OrderCode" placeholder="Mã đơn hàng" />
-                <input name="Phone" value="@Model.Phone" placeholder="Hoặc số điện thoại" />
+                <input name="Phone" value="@Model.Phone" placeholder="Số điện thoại đã đặt" />
                 <button class="btn btn-primary" type="submit">Tra cứu</button>
             </div>
             @if (Model.IsAccountLookup)
             {
-                <p class="muted-text">Muốn kiểm tra đơn khác? Bạn vẫn có thể nhập mã đơn hàng hoặc số điện thoại ở trên.</p>
+                <p class="muted-text">Muốn kiểm tra đơn khác? Hãy nhập mã đơn hàng kèm số điện thoại đã đặt.</p>
             }
         </form>
 

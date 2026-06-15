@@ -38,11 +38,11 @@ namespace DACS_Food.Services
             return new CartViewModel { Items = cart.Items.ToList() };
         }
 
-        public async Task AddAsync(string? userId, string sessionId, int foodItemId, int quantity)
+        public async Task<bool> AddAsync(string? userId, string sessionId, int foodItemId, int quantity)
         {
             quantity = Math.Clamp(quantity, 1, 20);
             var food = await _db.FoodItems.FirstOrDefaultAsync(x => x.Id == foodItemId && x.IsActive && x.IsAvailable);
-            if (food == null) return;
+            if (food == null) return false;
 
             var cart = await GetOrCreateCartAsync(userId, sessionId);
             var item = cart.Items.FirstOrDefault(x => x.FoodItemId == foodItemId);
@@ -57,6 +57,7 @@ namespace DACS_Food.Services
 
             cart.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
+            return true;
         }
 
         public async Task UpdateAsync(string? userId, string sessionId, int cartItemId, int quantity)

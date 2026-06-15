@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using DACS_Food.Models;
 using DACS_Food.Services;
 using DACS_Food.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,7 @@ namespace DACS_Food.Controllers
             try
             {
                 var order = await _orderService.CreateOrderAsync(GetUserId(), this.GetSessionId(), model);
+                this.RememberOrderCode(order.OrderCode);
                 return RedirectToAction(nameof(Success), new { code = order.OrderCode });
             }
             catch (InvalidOperationException ex)
@@ -57,6 +59,7 @@ namespace DACS_Food.Controllers
         {
             var order = await _orderService.GetByCodeAsync(code);
             if (order == null) return NotFound();
+            if (!CanViewOrder(order)) return NotFound();
             return View(order);
         }
 
@@ -100,6 +103,12 @@ namespace DACS_Food.Controllers
                 return View(model);
             }
 
+            if (!string.IsNullOrWhiteSpace(model.OrderCode) && string.IsNullOrWhiteSpace(model.Phone))
+            {
+                model.Message = "Vui lòng nhập thêm số điện thoại đã dùng khi đặt món để tra cứu mã đơn này.";
+                return View(model);
+            }
+
             model.Orders = await _orderService.TrackAsync(model.OrderCode, model.Phone);
             if (!model.Orders.Any())
             {
@@ -112,6 +121,14 @@ namespace DACS_Food.Controllers
         private string? GetUserId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier);
+        }
+
+        private bool CanViewOrder(Order order)
+        {
+            var userId = GetUserId();
+            return User.IsInRole("Admin")
+                || (!string.IsNullOrWhiteSpace(userId) && order.UserId == userId)
+                || this.HasRecentOrderCode(order.OrderCode);
         }
     }
 }

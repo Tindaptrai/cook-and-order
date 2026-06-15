@@ -7,6 +7,10 @@
 <section class="section section-light">
     <div class="container">
         <div class="cart-list">
+            @if (TempData["CartError"] is string error)
+            {
+                <p class="muted-text">@error</p>
+            }
             @if (!Model.Items.Any())
             {
                 <p class="muted-text">Chưa có món nào.</p>

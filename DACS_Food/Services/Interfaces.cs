@@ -28,7 +28,7 @@ namespace DACS_Food.Services
     {
         Task<Cart> GetOrCreateCartAsync(string? userId, string sessionId);
         Task<CartViewModel> GetCartViewModelAsync(string? userId, string sessionId);
-        Task AddAsync(string? userId, string sessionId, int foodItemId, int quantity);
+        Task<bool> AddAsync(string? userId, string sessionId, int foodItemId, int quantity);
         Task UpdateAsync(string? userId, string sessionId, int cartItemId, int quantity);
         Task RemoveAsync(string? userId, string sessionId, int cartItemId);
         Task ClearAsync(Cart cart);

@@ -26,7 +26,12 @@ namespace DACS_Food.Controllers.Api
         [HttpPost("items")]
         public async Task<IActionResult> AddItem([FromBody] AddCartItemViewModel model)
         {
-            await _cartService.AddAsync(GetUserId(), GetSessionId(), model.FoodItemId, model.Quantity);
+            var added = await _cartService.AddAsync(GetUserId(), GetSessionId(), model.FoodItemId, model.Quantity);
+            if (!added)
+            {
+                return NotFound(new { message = "Món ăn không tồn tại hoặc đang tạm hết." });
+            }
+
             var cart = await _cartService.GetCartViewModelAsync(GetUserId(), GetSessionId());
             return Ok(ToResponse(cart));
         }

@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using DACS_Food.Controllers;
 using DACS_Food.Models;
 using DACS_Food.Services;
 using DACS_Food.ViewModels;
@@ -22,6 +23,7 @@ namespace DACS_Food.Controllers.Api
         {
             var order = await _orderService.GetByCodeAsync(orderCode);
             if (order == null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+            if (!CanViewOrder(order)) return NotFound(new { message = "Không tìm thấy đơn hàng." });
             return Ok(MapOrder(order));
         }
 
@@ -30,6 +32,7 @@ namespace DACS_Food.Controllers.Api
         {
             var order = await _orderService.GetByIdAsync(id);
             if (order == null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+            if (!CanViewOrder(order)) return NotFound(new { message = "Không tìm thấy đơn hàng." });
             return Ok(MapOrder(order));
         }
 
@@ -50,6 +53,11 @@ namespace DACS_Food.Controllers.Api
                     items = accountOrders.Select(MapTrackingOrder),
                     lookupMode = "account"
                 });
+            }
+
+            if (!string.IsNullOrWhiteSpace(orderCode) && string.IsNullOrWhiteSpace(phone))
+            {
+                return BadRequest(new { message = "Vui lòng nhập thêm số điện thoại đã dùng khi đặt món để tra cứu mã đơn này." });
             }
 
             var orders = await _orderService.TrackAsync(orderCode, phone);
@@ -78,6 +86,7 @@ namespace DACS_Food.Controllers.Api
             try
             {
                 var order = await _orderService.CreateOrderAsync(GetUserId(), GetSessionId(), model);
+                this.RememberOrderCode(order.OrderCode);
                 var paymentUrl = order.PaymentMethod == PaymentMethod.QR ? $"/payment/qr/{order.OrderCode}" : null;
 
                 return Ok(new
@@ -98,6 +107,14 @@ namespace DACS_Food.Controllers.Api
         private string? GetUserId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier);
+        }
+
+        private bool CanViewOrder(Order order)
+        {
+            var userId = GetUserId();
+            return User.IsInRole("Admin")
+                || (!string.IsNullOrWhiteSpace(userId) && order.UserId == userId)
+                || this.HasRecentOrderCode(order.OrderCode);
         }
 
         private string GetSessionId()

@@ -52,7 +52,13 @@ async function postCartItemToApi(foodItemId, quantity = 1) {
     body: JSON.stringify({ foodItemId, quantity })
   });
 
-  if (!response.ok) throw new Error('Cannot add cart item');
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const error = new Error(data.message || 'Không thể thêm món vào giỏ hàng.');
+    error.serverRejected = true;
+    throw error;
+  }
+
   return response.json();
 }
 
@@ -140,8 +146,13 @@ async function addToCart(name, price, image = '', id = 0, quantity = 1) {
       const panel = document.getElementById('cartPanel');
       if (panel) panel.classList.add('show');
       return;
-    } catch {
-      // Fallback to local cart below.
+    } catch (error) {
+      if (error.serverRejected) {
+        alert(error.message);
+        return;
+      }
+
+      // Fallback to local cart below when the server cannot be reached.
     }
   }
 
@@ -207,12 +218,14 @@ async function removeCartItem(index) {
 function renderCart() {
   const cartList = document.getElementById('cartList');
   const cartCount = document.getElementById('cartCount');
+  const mobileCartCount = document.getElementById('mobileCartCount');
   const cartTotal = document.getElementById('cartTotal');
 
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   if (cartCount) cartCount.textContent = totalQuantity > 0 ? totalQuantity : '';
+  if (mobileCartCount) mobileCartCount.textContent = totalQuantity > 0 ? totalQuantity : '';
   if (cartTotal) cartTotal.textContent = formatVND(totalPrice);
 
   if (!cartList) return;
