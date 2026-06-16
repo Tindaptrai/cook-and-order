@@ -39,7 +39,7 @@ namespace DACS_Food.Services
         Task<Order> CreateOrderAsync(string? userId, string sessionId, CreateOrderViewModel model);
         Task<Order?> GetByCodeAsync(string orderCode);
         Task<Order?> GetByIdAsync(int id);
-        Task<IReadOnlyList<Order>> TrackAsync(string? orderCode, string? phone);
+        Task<IReadOnlyList<Order>> TrackAsync(string? orderCode);
         Task<IReadOnlyList<Order>> GetByUserIdAsync(string userId, int count = 10);
         Task<(bool Success, string Message, Order? Order)> UpdateStatusAsync(int id, OrderStatus status, string updatedBy);
         Task<(bool Success, string Message, Order? Order)> UpdateDeliveryAsync(int id, DeliveryStatus deliveryStatus, string? shipperName, string? shipperPhone, string? deliveryNote, string updatedBy);

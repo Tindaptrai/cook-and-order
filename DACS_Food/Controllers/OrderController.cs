@@ -81,7 +81,7 @@ namespace DACS_Food.Controllers
         [HttpPost("/order-tracking")]
         public async Task<IActionResult> Tracking(OrderTrackingViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.OrderCode) && string.IsNullOrWhiteSpace(model.Phone))
+            if (string.IsNullOrWhiteSpace(model.OrderCode))
             {
                 var userId = GetUserId();
                 if (!string.IsNullOrWhiteSpace(userId))
@@ -96,11 +96,11 @@ namespace DACS_Food.Controllers
                     return View(model);
                 }
 
-                model.Message = "Vui lòng nhập mã đơn hàng hoặc số điện thoại.";
+                model.Message = "Vui lòng nhập mã đơn hàng.";
                 return View(model);
             }
 
-            model.Orders = await _orderService.TrackAsync(model.OrderCode, model.Phone);
+            model.Orders = await _orderService.TrackAsync(model.OrderCode);
             if (!model.Orders.Any())
             {
                 model.Message = "Không tìm thấy đơn hàng phù hợp.";

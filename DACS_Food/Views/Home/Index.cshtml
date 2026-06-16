@@ -3,9 +3,9 @@
     var tables = ViewBag.Tables as IReadOnlyList<DACS_Food.ViewModels.PublicTableViewModel> ?? new List<DACS_Food.ViewModels.PublicTableViewModel>();
 }
 
-<section class="hero">
+<section class="hero home-3d-hero">
     <div class="container hero-content">
-        <div>
+        <div class="hero-copy">
             <div class="badge">Giờ vàng giảm giá 10:30-12:30 và 16:00-18:00</div>
             <h1>Đặt món ngon, học nấu <span>căn bản</span>, chọn thực phẩm tốt hơn.</h1>
             <p>Website bán đồ ăn kết hợp công thức nấu ăn cơ bản, mẹo chọn thực phẩm và chatbot tư vấn món theo nguyên liệu hoặc tâm trạng của khách hàng.</p>
@@ -14,14 +14,55 @@
                 <a href="/recipes" class="btn btn-outline">Xem công thức</a>
                 <a href="/food-guide" class="btn btn-outline">Cách chọn thực phẩm</a>
             </div>
-            <div class="hero-stats">
+            <div class="hero-stats hero-stats-desktop">
                 <div class="stat-card"><h3>25+</h3><p>Món trong thực đơn</p></div>
                 <div class="stat-card"><h3>10</h3><p>Bàn phục vụ</p></div>
                 <div class="stat-card"><h3>24/7</h3><p>Chatbot hỗ trợ</p></div>
             </div>
         </div>
-        <div class="hero-image">
-            <div class="hero-image-card"><img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80" alt="Món ăn nổi bật" /></div>
+        <div class="hero-3d-stage" aria-label="Bộ món ăn nổi bật FoodieTTTM">
+            <div class="food-showcase">
+                <div class="showcase-halo"></div>
+                <div class="showcase-shadow"></div>
+
+                <div class="hero-food-main">
+                    <img src="/assets/images/menu/mon-man/com-suon-nuong.jpg" alt="Cơm sườn nướng" />
+                    <div class="hero-food-caption">
+                        <small>Món bán chạy</small>
+                        <strong>Cơm sườn nướng</strong>
+                    </div>
+                </div>
+
+                <div class="hero-food-mini mini-bowl">
+                    <img src="/assets/images/menu/healthy/bowl-ca-hoi.jpg" alt="Bowl cá hồi" />
+                    <div>
+                        <small>Healthy</small>
+                        <strong>Bowl cá hồi</strong>
+                    </div>
+                </div>
+
+                <div class="hero-food-mini mini-drink">
+                    <img src="/assets/images/menu/do-uong/tra-dao-cam-sa.png" alt="Trà đào cam sả" />
+                    <div>
+                        <small>Đồ uống</small>
+                        <strong>Trà đào cam sả</strong>
+                    </div>
+                </div>
+
+                <div class="hero-food-badge badge-top">
+                    <span>Bếp chọn</span>
+                    <strong>Combo hôm nay</strong>
+                </div>
+                <div class="hero-food-badge badge-bottom">
+                    <span>AI gợi ý</span>
+                    <strong>Theo khẩu vị</strong>
+                </div>
+            </div>
+        </div>
+        <div class="hero-stats hero-stats-mobile">
+            <div class="stat-card"><h3>25+</h3><p>Món trong thực đơn</p></div>
+            <div class="stat-card"><h3>10</h3><p>Bàn phục vụ</p></div>
+            <div class="stat-card"><h3>24/7</h3><p>Chatbot hỗ trợ</p></div>
         </div>
     </div>
 </section>

@@ -34,14 +34,14 @@ namespace DACS_Food.Controllers.Api
         }
 
         [HttpGet("track")]
-        public async Task<IActionResult> Track([FromQuery] string? orderCode, [FromQuery] string? phone)
+        public async Task<IActionResult> Track([FromQuery] string? orderCode)
         {
-            if (string.IsNullOrWhiteSpace(orderCode) && string.IsNullOrWhiteSpace(phone))
+            if (string.IsNullOrWhiteSpace(orderCode))
             {
                 var userId = GetUserId();
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    return BadRequest(new { message = "Vui lòng nhập mã đơn hàng hoặc số điện thoại." });
+                    return BadRequest(new { message = "Vui lòng nhập mã đơn hàng." });
                 }
 
                 var accountOrders = await _orderService.GetByUserIdAsync(userId);
@@ -52,7 +52,7 @@ namespace DACS_Food.Controllers.Api
                 });
             }
 
-            var orders = await _orderService.TrackAsync(orderCode, phone);
+            var orders = await _orderService.TrackAsync(orderCode);
             if (!orders.Any())
             {
                 return NotFound(new { message = "Không tìm thấy đơn hàng phù hợp." });

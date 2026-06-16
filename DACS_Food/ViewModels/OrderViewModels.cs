@@ -33,7 +33,6 @@ namespace DACS_Food.ViewModels
     public class OrderTrackingViewModel
     {
         public string? OrderCode { get; set; }
-        public string? Phone { get; set; }
         public string? Message { get; set; }
         public bool IsAccountLookup { get; set; }
         public IReadOnlyList<Order> Orders { get; set; } = Array.Empty<Order>();

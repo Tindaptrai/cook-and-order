@@ -30,7 +30,7 @@ namespace DACS_Food.Services
         {
             if (string.IsNullOrWhiteSpace(model.PhoneNumber))
             {
-                throw new InvalidOperationException("Vui lòng nhập số điện thoại để tra cứu đơn hàng sau này.");
+                throw new InvalidOperationException("Vui lòng nhập số điện thoại để quán liên hệ xác nhận đơn hàng.");
             }
 
             if (model.OrderType == OrderType.Delivery && string.IsNullOrWhiteSpace(model.Address))
@@ -152,7 +152,7 @@ namespace DACS_Food.Services
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<IReadOnlyList<Order>> TrackAsync(string? orderCode, string? phone)
+        public async Task<IReadOnlyList<Order>> TrackAsync(string? orderCode)
         {
             if (!string.IsNullOrWhiteSpace(orderCode))
             {
@@ -164,20 +164,6 @@ namespace DACS_Food.Services
                     .Include(x => x.Shipment)
                     .Include(x => x.StatusHistories.OrderByDescending(h => h.CreatedAt))
                     .Where(x => x.OrderCode == code)
-                    .ToListAsync();
-            }
-
-            if (!string.IsNullOrWhiteSpace(phone))
-            {
-                var normalizedPhone = phone.Trim();
-                return await _db.Orders
-                    .AsNoTracking()
-                    .Include(x => x.Items)
-                    .Include(x => x.Payment)
-                    .Include(x => x.Shipment)
-                    .Where(x => x.PhoneNumber == normalizedPhone)
-                    .OrderByDescending(x => x.CreatedAt)
-                    .Take(10)
                     .ToListAsync();
             }
 
