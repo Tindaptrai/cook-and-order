@@ -1,4 +1,133 @@
 @model IEnumerable<DACS_Food.Models.FoodItem>
-@{ ViewData["Title"] = "Món ăn"; }
-<section class="page-hero"><div class="container"><div class="badge">Admin</div><h1>Quản lý món ăn</h1><p>@Model.Count() món trong hệ thống.</p></div></section>
-<section class="section section-light"><div class="container food-grid">@foreach (var item in Model) { <div class="simple-card"><h3>@item.Name</h3><p>@item.FoodCategory?.Name</p><strong>@item.Price.ToString("N0")đ</strong></div> }</div></section>
+@{
+    ViewData["Title"] = "Quản lý món ăn";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý món ăn</h1>
+        <p>@Model.Count() món trong hệ thống. Nhấn Sửa để chỉnh sửa, hoặc Xóa để gỡ món.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        @if (TempData["FoodItemMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+        @if (TempData["FoodItemError"] is string error)
+        {
+            <div class="notice danger">@error</div>
+        }
+
+        <div class="admin-toolbar">
+            <a class="btn btn-primary" href="/admin/mon-an/tao">+ Thêm món ăn mới</a>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <p style="text-align:center; color:#6b7280; padding: 48px 0;">
+                Chưa có món ăn nào. <a href="/admin/mon-an/tao" style="color:#f97316;font-weight:900;">Thêm ngay</a>.
+            </p>
+        }
+        else
+        {
+            <div class="food-grid">
+                @foreach (var item in Model)
+                {
+                    <div class="food-card" style="position:relative; cursor:default;">
+
+                        @* Badge trạng thái góc trên phải *@
+                        <div style="position:absolute;top:14px;right:14px;z-index:2;">
+                            @if (item.IsActive && item.IsAvailable)
+                            {
+                                <span class="badge-soft badge-done">Đang bán</span>
+                            }
+                            else if (!item.IsActive)
+                            {
+                                <span class="badge-soft badge-cancel">Đã ẩn</span>
+                            }
+                            else
+                            {
+                                <span class="badge-soft badge-waiting">Hết hàng</span>
+                            }
+                        </div>
+
+                        @* Hình ảnh + tag danh mục *@
+                        <div class="food-img">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.Name" />
+                            }
+                            else
+                            {
+                                <div style="height:100%;background:linear-gradient(135deg,#fff7ed,#ffedd5);display:grid;place-items:center;font-size:48px;">🍽️</div>
+                            }
+                            @if (item.FoodCategory != null)
+                            {
+                                <span class="food-tag">@item.FoodCategory.Name</span>
+                            }
+                        </div>
+
+                        @* Thông tin món ăn *@
+                        <div class="food-body">
+                            <h3 style="font-size:17px;margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">@item.Name</h3>
+
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <p style="font-size:13px;margin-bottom:12px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">@item.Description</p>
+                            }
+                            else
+                            {
+                                <p style="font-size:13px;margin-bottom:12px;color:#d1d5db;">Chưa có mô tả.</p>
+                            }
+
+                            <div class="food-bottom" style="margin-bottom:14px;">
+                                <div>
+                                    @if (item.DiscountPrice.HasValue)
+                                    {
+                                        <span class="price">@item.DiscountPrice.Value.ToString("N0")đ</span>
+                                        <span style="text-decoration:line-through;color:#9ca3af;font-size:12px;margin-left:6px;display:block;">@item.Price.ToString("N0")đ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="price">@item.Price.ToString("N0")đ</span>
+                                    }
+                                </div>
+                                @if (item.IsBestSeller)
+                                {
+                                    <span style="background:#fef3c7;color:#92400e;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:950;white-space:nowrap;">🔥 Bán chạy</span>
+                                }
+                                else if (item.IsFeatured)
+                                {
+                                    <span style="background:#ede9fe;color:#6d28d9;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:950;white-space:nowrap;">⭐ Nổi bật</span>
+                                }
+                            </div>
+
+                            @* Nút Sửa và Xóa *@
+                            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch;">
+                                <a class="small-btn neutral"
+                                   href="/admin/mon-an/sua/@item.Id"
+                                   style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;font-size:13px;">
+                                    ✏️ Sửa
+                                </a>
+                                <form method="post" action="/admin/mon-an/xoa/@item.Id"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa món «@item.Name»?');"
+                                      style="display:contents;">
+                                    @Html.AntiForgeryToken()
+                                    <button class="small-btn danger" type="submit"
+                                            style="border-radius:12px;font-size:15px;padding:10px 16px;line-height:1;"
+                                            title="Xóa @item.Name">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

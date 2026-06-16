@@ -5,6 +5,32 @@
         <div class="simple-grid" id="adminDashboardStats">
             <div class="simple-card"><h3>Đang tải dữ liệu...</h3><p>Vui lòng chờ trong giây lát.</p></div>
         </div>
+        <div class="simple-grid" style="grid-template-columns: 1fr 1fr; margin-top: 18px; gap: 18px;">
+            <div class="simple-card">
+                <h3 style="text-align: center; margin-bottom: 10px;">Biểu đồ số lượng đơn hàng theo ngày</h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="ordersChart"></canvas>
+                </div>
+            </div>
+            <div class="simple-card">
+                <h3 style="text-align: center; margin-bottom: 10px;">Biểu đồ doanh số theo ngày</h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="simple-grid" style="grid-template-columns: 1fr 1fr; margin-top: 18px; gap: 18px;">
+            <div class="simple-card">
+                <h3>Top 5 sản phẩm bán chạy nhất</h3>
+                <div id="topProductsList"><p class="muted-text">Đang tải...</p></div>
+            </div>
+            <div class="simple-card">
+                <h3>Người dùng mua nhiều nhất</h3>
+                <div id="topUsersList"><p class="muted-text">Đang tải...</p></div>
+            </div>
+        </div>
+
         <div class="simple-card admin-focus-card" style="margin-top: 18px;">
             <h3>Trung tâm xử lý đơn</h3>
             <p class="muted-text">Xem chung đơn đặt món và lịch đặt bàn trong một màn hình để tránh thất lạc yêu cầu mới.</p>
@@ -17,6 +43,7 @@
     </div>
 </section>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const formatAdminMoney = value => `${Number(value || 0).toLocaleString('vi-VN')}đ`;
 
@@ -33,7 +60,7 @@
             statsRoot.innerHTML = `
                 <div class="simple-card"><h3>${data.totalOrders}</h3><p>Tổng đơn hàng</p></div>
                 <div class="simple-card"><h3>${data.newOrders}</h3><p>Đơn mới cần xử lý</p></div>
-                <div class="simple-card"><h3>${formatAdminMoney(data.revenue)}</h3><p>Doanh thu tạm tính</p></div>
+                <div class="simple-card" style="cursor: pointer;" onclick="window.location.href='/admin'"><h3>${formatAdminMoney(data.revenue)}</h3><p>Doanh thu tạm tính</p></div>
                 <div class="simple-card"><h3>${data.totalFoods}</h3><p>Món đang bán</p></div>
                 <div class="simple-card"><h3>${data.totalUsers}</h3><p>Người dùng</p></div>
                 <div class="simple-card"><h3>${data.totalReservations}</h3><p>Lượt đặt bàn</p></div>
@@ -48,6 +75,68 @@
                     </div>
                 `).join('')
                 : '<p class="muted-text">Chưa có đơn hàng.</p>';
+
+            // Render Charts
+            const ctxOrders = document.getElementById('ordersChart').getContext('2d');
+            new Chart(ctxOrders, {
+                type: 'line',
+                data: {
+                    labels: data.chartDates,
+                    datasets: [{
+                        label: 'Số lượng đơn hàng',
+                        data: data.chartOrders,
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRevenue, {
+                type: 'line',
+                data: {
+                    labels: data.chartDates,
+                    datasets: [{
+                        label: 'Doanh số (VNĐ)',
+                        data: data.chartRevenue,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Render Top Products
+            const productsRoot = document.getElementById('topProductsList');
+            if (data.bestSellingProducts && data.bestSellingProducts.length > 0) {
+                productsRoot.innerHTML = data.bestSellingProducts.map(p => `
+                    <div class="cart-item">
+                        <span>${p.foodName}</span>
+                        <strong>${p.totalSold} đã bán - ${formatAdminMoney(p.revenue)}</strong>
+                    </div>
+                `).join('');
+            } else {
+                productsRoot.innerHTML = '<p class="muted-text">Chưa có dữ liệu.</p>';
+            }
+
+            // Render Top Users
+            const usersRoot = document.getElementById('topUsersList');
+            if (data.topUsers && data.topUsers.length > 0) {
+                usersRoot.innerHTML = data.topUsers.map(u => `
+                    <div class="cart-item">
+                        <span>${u.customerName}</span>
+                        <strong>${u.totalOrders} đơn - ${formatAdminMoney(u.totalSpent)}</strong>
+                    </div>
+                `).join('');
+            } else {
+                usersRoot.innerHTML = '<p class="muted-text">Chưa có dữ liệu.</p>';
+            }
+
         } catch (error) {
             statsRoot.innerHTML = '<div class="simple-card"><h3>Không tải được dữ liệu</h3><p>Vui lòng kiểm tra quyền admin hoặc đăng nhập lại.</p></div>';
             recentRoot.innerHTML = '<p class="muted-text">Không tải được danh sách đơn hàng.</p>';
