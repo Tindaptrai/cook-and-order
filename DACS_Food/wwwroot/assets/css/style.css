@@ -1329,6 +1329,59 @@ img { width: 100%; display: block; }
   margin-top: 4px;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #ffedd5;
+}
+
+.auth-external-form {
+  display: grid;
+}
+
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 10px 24px rgba(17,24,39,.08);
+}
+
+.btn-google:hover {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  transform: translateY(-1px);
+}
+
+.google-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 0 50%, #fbbc05 0 75%, #ea4335 0);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+}
+
 .auth-validation {
   margin-bottom: 14px;
   color: #991b1b;

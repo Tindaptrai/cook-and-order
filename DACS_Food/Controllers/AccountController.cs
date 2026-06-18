@@ -2,12 +2,14 @@
 using DACS_Food.Services;
 using DACS_Food.ViewModels;
 using DACS_Food.Data;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using System.Security.Claims;
 using System.Text;
 
 namespace DACS_Food.Controllers
@@ -36,14 +38,16 @@ namespace DACS_Food.Controllers
         }
 
         [HttpGet("/dang-nhap")]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
         [HttpPost("/dang-nhap")]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -68,7 +72,109 @@ namespace DACS_Food.Controllers
                 return Redirect("/admin");
             }
 
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost("/dang-nhap-google")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GoogleLogin(string? returnUrl = null)
+        {
+            var schemes = await _signInManager.GetExternalAuthenticationSchemesAsync();
+            if (!schemes.Any(s => s.Name == GoogleDefaults.AuthenticationScheme))
+            {
+                TempData["LoginError"] = "Chưa cấu hình Google Client ID/Secret. Vui lòng điền Authentication:Google trong appsettings.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var redirectUrl = Url.Action(nameof(GoogleLoginCallback), "Account", new { returnUrl });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(GoogleDefaults.AuthenticationScheme, redirectUrl);
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("/dang-nhap-google-callback")]
+        public async Task<IActionResult> GoogleLoginCallback(string? returnUrl = null, string? remoteError = null)
+        {
+            if (!string.IsNullOrWhiteSpace(remoteError))
+            {
+                TempData["LoginError"] = $"Google không thể đăng nhập: {remoteError}";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                TempData["LoginError"] = "Không lấy được thông tin đăng nhập từ Google. Vui lòng thử lại.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var externalResult = await _signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider,
+                info.ProviderKey,
+                isPersistent: false,
+                bypassTwoFactor: true);
+
+            if (externalResult.Succeeded)
+            {
+                var externalUser = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                if (externalUser != null)
+                {
+                    return await RedirectAfterLoginAsync(externalUser, returnUrl);
+                }
+            }
+
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["LoginError"] = "Tài khoản Google chưa cung cấp email. Vui lòng chọn tài khoản Google khác.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                var fullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email.Split('@')[0];
+                var avatarUrl = info.Principal.FindFirstValue("urn:google:picture")
+                    ?? info.Principal.FindFirstValue("picture")
+                    ?? string.Empty;
+
+                user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    FullName = fullName,
+                    AvatarUrl = avatarUrl,
+                    EmailConfirmed = true,
+                    IsEmailVerified = true
+                };
+
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    TempData["LoginError"] = "Không thể tạo tài khoản từ Google. Vui lòng thử lại.";
+                    return RedirectToAction(nameof(Login), new { returnUrl });
+                }
+            }
+            else if (!user.IsEmailVerified || !user.EmailConfirmed)
+            {
+                user.IsEmailVerified = true;
+                user.EmailConfirmed = true;
+                await _userManager.UpdateAsync(user);
+            }
+
+            var addLoginResult = await _userManager.AddLoginAsync(user, info);
+            if (!addLoginResult.Succeeded && !addLoginResult.Errors.Any(e => e.Code == "LoginAlreadyAssociated"))
+            {
+                TempData["LoginError"] = "Không thể liên kết tài khoản Google. Vui lòng thử lại.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return await RedirectAfterLoginAsync(user, returnUrl);
         }
 
         [HttpGet("/Account/ForgotPassword")]
@@ -361,6 +467,21 @@ namespace DACS_Food.Controllers
         private string GetIpAddress()
         {
             return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
+        private async Task<IActionResult> RedirectAfterLoginAsync(ApplicationUser user, string? returnUrl)
+        {
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return Redirect("/admin");
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         private bool CheckForgotPasswordRateLimit(string email, string ipAddress)

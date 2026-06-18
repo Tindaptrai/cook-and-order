@@ -1,6 +1,8 @@
 ﻿using DACS_Food.Data;
 using DACS_Food.Models;
 using DACS_Food.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -49,6 +51,22 @@ builder.Services
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(googleClientId)
+    && !string.IsNullOrWhiteSpace(googleClientSecret)
+    && !googleClientId.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase)
+    && !googleClientSecret.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddAuthentication()
+        .AddGoogle(options =>
+        {
+            options.ClientId = googleClientId;
+            options.ClientSecret = googleClientSecret;
+            options.ClaimActions.MapJsonKey("urn:google:picture", "picture", "url");
+        });
+}
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
