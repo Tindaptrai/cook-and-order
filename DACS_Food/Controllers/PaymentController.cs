@@ -1,5 +1,3 @@
-using System.Security.Claims;
-using DACS_Food.Models;
 using DACS_Food.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +21,6 @@ namespace DACS_Food.Controllers
         {
             var order = await _orderService.GetByCodeAsync(orderCode);
             if (order == null) return NotFound();
-            if (!CanViewOrder(order)) return NotFound();
             if (order.PaymentMethod != Models.PaymentMethod.QR)
             {
                 return RedirectToAction("Success", "Order", new { code = orderCode });
@@ -35,25 +32,8 @@ namespace DACS_Food.Controllers
         [HttpPost("/payment/demo-confirm")]
         public async Task<IActionResult> DemoConfirm(string orderCode)
         {
-            var order = await _orderService.GetByCodeAsync(orderCode);
-            if (order == null) return NotFound();
-            if (!CanViewOrder(order)) return NotFound();
-
             await _paymentService.ConfirmDemoPaymentAsync(orderCode);
             return RedirectToAction("Success", "Order", new { code = orderCode });
-        }
-
-        private string? GetUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier);
-        }
-
-        private bool CanViewOrder(Order order)
-        {
-            var userId = GetUserId();
-            return User.IsInRole("Admin")
-                || (!string.IsNullOrWhiteSpace(userId) && order.UserId == userId)
-                || this.HasRecentOrderCode(order.OrderCode);
         }
     }
 }
