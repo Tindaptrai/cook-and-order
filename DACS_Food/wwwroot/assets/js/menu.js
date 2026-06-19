@@ -505,10 +505,24 @@ function mapApiMenuItem(item) {
 
 async function loadMenuItemsFromApi() {
   try {
-    const response = await fetch('/api/foods?page=1&pageSize=100');
-    if (!response.ok) throw new Error('Cannot load menu API');
-    const data = await response.json();
-    apiMenuItems = Array.isArray(data.items) ? data.items.map(mapApiMenuItem) : [];
+    const pageSize = 200;
+    let page = 1;
+    let totalPages = 1;
+    const items = [];
+
+    do {
+      const response = await fetch(`/api/foods?page=${page}&pageSize=${pageSize}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Cannot load menu API');
+      const data = await response.json();
+      if (Array.isArray(data.items)) {
+        items.push(...data.items.map(mapApiMenuItem));
+      }
+
+      totalPages = Number(data.totalPages || 1);
+      page += 1;
+    } while (page <= totalPages);
+
+    apiMenuItems = items;
     apiMenuLoaded = apiMenuItems.length > 0;
   } catch {
     apiMenuItems = [];
