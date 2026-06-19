@@ -77,6 +77,7 @@
             <p><strong>Số điện thoại:</strong> @(Model.PhoneNumber ?? "Chưa cập nhật")</p>
             <p><strong>Xác thực Gmail:</strong> @(Model.IsEmailVerified ? "Đã xác thực" : "Chưa xác thực")</p>
             <p><strong>Ngày tạo:</strong> @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+            <a class="btn btn-outline" href="/tai-khoan/doi-mat-khau">Đổi mật khẩu</a>
         </div>
 
         <div class="simple-card" id="hang-thanh-vien">
@@ -97,6 +98,7 @@
             <p><strong>Tổng chi tiêu:</strong> @(((decimal)totalSpent).ToString("N0"))đ</p>
             <a class="btn btn-primary" href="/lich-su-don-hang">Xem lịch sử</a>
         </div>
+
     </div>
 </section>
 
