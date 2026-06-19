@@ -37,6 +37,58 @@ namespace DACS_Food.Controllers.Api
                 .Where(x => x.CreatedAt >= today && x.OrderStatus != OrderStatus.Cancelled)
                 .SumAsync(x => x.TotalAmount);
 
+            var sevenDaysAgo = today.AddDays(-6);
+            var last7Days = Enumerable.Range(0, 7).Select(i => today.AddDays(-i)).OrderBy(d => d).ToList();
+            
+            var ordersInLast7Days = await _db.Orders
+                .Where(x => x.CreatedAt >= sevenDaysAgo)
+                .ToListAsync();
+
+            var ordersData = ordersInLast7Days
+                .GroupBy(x => x.CreatedAt.Date)
+                .Select(g => new {
+                    Date = g.Key,
+                    Count = g.Count(),
+                    Revenue = g.Where(x => x.OrderStatus != OrderStatus.Cancelled).Sum(x => (decimal?)x.TotalAmount) ?? 0
+                })
+                .ToList();
+
+            var chartDates = last7Days.Select(d => d.ToString("yyyy-MM-dd")).ToList();
+            var chartOrders = last7Days.Select(d => ordersData.FirstOrDefault(x => x.Date == d)?.Count ?? 0).ToList();
+            var chartRevenue = last7Days.Select(d => ordersData.FirstOrDefault(x => x.Date == d)?.Revenue ?? 0).ToList();
+
+            var bestSellingProductsRaw = await _db.OrderItems
+                .Where(x => x.Order!.OrderStatus != OrderStatus.Cancelled)
+                .Select(x => new { x.FoodItemId, x.FoodName, x.Quantity, x.LineTotal })
+                .ToListAsync();
+
+            var bestSellingProducts = bestSellingProductsRaw
+                .GroupBy(x => new { x.FoodItemId, x.FoodName })
+                .Select(g => new {
+                    foodName = g.Key.FoodName,
+                    totalSold = g.Sum(x => x.Quantity),
+                    revenue = g.Sum(x => (decimal?)x.LineTotal) ?? 0
+                })
+                .OrderByDescending(x => x.totalSold)
+                .Take(5)
+                .ToList();
+
+            var topUsersRaw = await _db.Orders
+                .Where(x => x.OrderStatus != OrderStatus.Cancelled && x.UserId != null)
+                .Select(x => new { x.UserId, x.CustomerName, x.TotalAmount })
+                .ToListAsync();
+
+            var topUsers = topUsersRaw
+                .GroupBy(x => new { x.UserId, x.CustomerName })
+                .Select(g => new {
+                    customerName = g.Key.CustomerName,
+                    totalOrders = g.Count(),
+                    totalSpent = g.Sum(x => (decimal?)x.TotalAmount) ?? 0
+                })
+                .OrderByDescending(x => x.totalSpent)
+                .Take(5)
+                .ToList();
+
             var recentOrders = await _db.Orders
                 .AsNoTracking()
                 .OrderByDescending(x => x.CreatedAt)
@@ -70,7 +122,12 @@ namespace DACS_Food.Controllers.Api
                 totalFoods = await _db.FoodItems.CountAsync(x => x.IsActive),
                 totalUsers = await _db.Users.CountAsync(),
                 totalReservations = await _db.TableReservations.CountAsync(),
-                recentOrders
+                recentOrders,
+                chartDates,
+                chartOrders,
+                chartRevenue,
+                bestSellingProducts,
+                topUsers
             });
         }
 

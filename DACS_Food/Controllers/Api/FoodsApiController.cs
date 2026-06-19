@@ -62,7 +62,7 @@ namespace DACS_Food.Controllers.Api
                 x.Name,
                 x.Slug,
                 Category = x.FoodCategory?.Name ?? x.Category,
-                x.MainCategory,
+                MainCategory = string.IsNullOrWhiteSpace(x.MainCategory) ? InferMainCategory(x) : x.MainCategory,
                 x.Subcategory,
                 x.Price,
                 x.DiscountPrice,
@@ -82,6 +82,15 @@ namespace DACS_Food.Controllers.Api
                 x.IsVegetarian,
                 x.IsBestSeller
             };
+        }
+
+        private static string InferMainCategory(DACS_Food.Models.FoodItem food)
+        {
+            var source = $"{food.MainCategory} {food.Category} {food.FoodCategory?.Name} {food.FoodCategory?.Slug}".ToLowerInvariant();
+            if (source.Contains("chay")) return "Món chay";
+            if (source.Contains("healthy")) return "Healthy";
+            if (source.Contains("đồ uống") || source.Contains("do-uong") || source.Contains("do uong")) return "Đồ uống";
+            return "Món mặn";
         }
     }
 }

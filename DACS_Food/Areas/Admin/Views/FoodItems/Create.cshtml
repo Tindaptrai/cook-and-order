@@ -1,0 +1,163 @@
+@model DACS_Food.Models.FoodItem
+@{
+    ViewData["Title"] = "Thêm món ăn mới";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Thêm món ăn mới</h1>
+        <p>Nhập thông tin chi tiết cho món ăn mới để hiển thị trong menu.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container">
+        <div class="checkout-layout admin-discount-layout">
+            <form class="checkout-card light" asp-action="Create" method="post" enctype="multipart/form-data">
+                <h3>Thông tin món ăn</h3>
+                <p>Điền đầy đủ thông tin bên dưới. Slug sẽ tự tạo nếu để trống.</p>
+                <div asp-validation-summary="ModelOnly" class="notice danger" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+                <div class="form-group">
+                    <label>Tên món ăn <span style="color:var(--accent,#f97316)">*</span></label>
+                    <input asp-for="Name" placeholder="Ví dụ: Phở bò tái chín" required />
+                    <span asp-validation-for="Name" style="color:#dc2626;font-size:13px;"></span>
+
+                    <label>Danh mục <span style="color:var(--accent,#f97316)">*</span></label>
+                    <select asp-for="FoodCategoryId" asp-items="ViewBag.Categories" required>
+                        <option value="">-- Chọn danh mục --</option>
+                    </select>
+                    <span asp-validation-for="FoodCategoryId" style="color:#dc2626;font-size:13px;"></span>
+
+                    <label>Giá bán (đ) <span style="color:var(--accent,#f97316)">*</span></label>
+                    <input asp-for="Price" type="number" min="0" step="1000" placeholder="Ví dụ: 75000" required />
+                    <span asp-validation-for="Price" style="color:#dc2626;font-size:13px;"></span>
+
+                    <label>Giá khuyến mãi (nếu có)</label>
+                    <input asp-for="DiscountPrice" type="number" min="0" step="1000" placeholder="Ví dụ: 65000" />
+
+                    @* ── Hình ảnh ─────────────────────────────── *@
+                    <label>Hình ảnh</label>
+
+                    @* Upload từ máy tính *@
+                    <div id="uploadZone" style="
+                        border: 2px dashed #fed7aa;
+                        border-radius: 16px;
+                        background: #fff7ed;
+                        padding: 22px 16px;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: .2s ease;
+                        position: relative;">
+                        <input type="file" name="imageFile" id="imageFileInput" accept="image/*"
+                               style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                        <div id="uploadPrompt">
+                            <div style="font-size:36px;margin-bottom:8px;">📷</div>
+                            <p style="color:#c2410c;font-weight:900;margin:0 0 4px;">Nhấn hoặc kéo ảnh vào đây</p>
+                            <small style="color:#9ca3af;font-weight:700;">JPG, PNG, WEBP tối đa 5MB</small>
+                        </div>
+                        <div id="uploadPreviewBox" style="display:none;">
+                            <img id="uploadPreviewImg" src="" alt="Preview"
+                                 style="max-height:180px;max-width:100%;border-radius:12px;object-fit:contain;" />
+                            <p id="uploadFileName" style="margin:8px 0 0;color:#374151;font-size:13px;font-weight:800;"></p>
+                            <button type="button" id="uploadClearBtn"
+                                    style="margin-top:8px;border:none;background:#fee2e2;color:#991b1b;border-radius:8px;padding:6px 12px;font-weight:900;cursor:pointer;font-size:12px;">
+                                ✕ Bỏ chọn
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" asp-for="ImageUrl" />
+
+                    <label>Mô tả ngắn</label>
+                    <textarea asp-for="Description" rows="3" placeholder="Mô tả hương vị, cách chế biến..."></textarea>
+
+                    <input type="hidden" asp-for="Slug" />
+
+                    <label class="inline-check"><input asp-for="IsActive" type="checkbox" value="true" checked /> Kích hoạt (hiển thị trên menu)</label>
+                    <label class="inline-check"><input asp-for="IsAvailable" type="checkbox" value="true" checked /> Còn hàng (cho phép đặt)</label>
+                    <label class="inline-check"><input asp-for="IsFeatured" type="checkbox" value="true" /> Nổi bật</label>
+                    <label class="inline-check"><input asp-for="IsBestSeller" type="checkbox" value="true" /> Bán chạy nhất</label>
+                    <label class="inline-check"><input asp-for="IsVegetarian" type="checkbox" value="true" /> Món chay</label>
+
+                    <div style="display:flex;gap:12px;margin-top:4px;">
+                        <button class="btn btn-primary" type="submit">Lưu món ăn</button>
+                        <a class="btn btn-dark" href="/admin/mon-an">Hủy</a>
+                    </div>
+                </div>
+            </form>
+
+            <div class="checkout-card">
+                <h3>Lưu ý</h3>
+                <div class="policy-list">
+                    <p>Bạn có thể <strong>tải ảnh lên từ máy tính</strong>. Ảnh được lưu vào thư mục <em>/images/foods/</em> trên server.</p>
+                    <p>Slug (URL thân thiện) sẽ được hệ thống tự động tạo từ tên món.</p>
+                    <p>Giá khuyến mãi hiển thị thay thế giá gốc khi khách xem menu.</p>
+                    <p>Cần bật cả <strong>Kích hoạt</strong> và <strong>Còn hàng</strong> để khách có thể đặt món.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            const fileInput = document.getElementById('imageFileInput');
+            const zone      = document.getElementById('uploadZone');
+            const prompt    = document.getElementById('uploadPrompt');
+            const preview   = document.getElementById('uploadPreviewBox');
+            const previewImg= document.getElementById('uploadPreviewImg');
+            const fileName  = document.getElementById('uploadFileName');
+            const clearBtn  = document.getElementById('uploadClearBtn');
+
+            function showPreview(file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    previewImg.src = e.target.result;
+                    fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+                    prompt.style.display = 'none';
+                    preview.style.display = 'block';
+                    zone.style.borderColor = '#86efac';
+                    zone.style.background  = '#f0fdf4';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files[0]) showPreview(fileInput.files[0]);
+            });
+
+            clearBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                fileInput.value = '';
+                prompt.style.display = 'block';
+                preview.style.display = 'none';
+                zone.style.borderColor = '#fed7aa';
+                zone.style.background  = '#fff7ed';
+            });
+
+            // Drag & drop
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                zone.style.borderColor = '#f97316';
+                zone.style.background  = '#fff7ed';
+            });
+            zone.addEventListener('dragleave', () => {
+                zone.style.borderColor = '#fed7aa';
+            });
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                    showPreview(file);
+                }
+            });
+
+        })();
+    </script>
+}

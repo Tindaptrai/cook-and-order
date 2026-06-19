@@ -64,4 +64,27 @@ namespace DACS_Food.ViewModels
         [Compare(nameof(NewPassword), ErrorMessage = "Mật khẩu xác nhận không trùng khớp.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
+
+    public class ChangePasswordViewModel
+    {
+        [DataType(DataType.Password)]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
+        [DataType(DataType.Password)]
+        [MinLength(6, ErrorMessage = "Mật khẩu cần ít nhất 6 ký tự.")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng xác nhận mật khẩu mới.")]
+        [DataType(DataType.Password)]
+        [Compare(nameof(NewPassword), ErrorMessage = "Mật khẩu xác nhận không trùng khớp.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public class ConfirmChangePasswordOtpViewModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập mã OTP.")]
+        [RegularExpression(@"^\d{8}$", ErrorMessage = "Mã OTP phải gồm đúng 8 chữ số.")]
+        public string Code { get; set; } = string.Empty;
+    }
 }

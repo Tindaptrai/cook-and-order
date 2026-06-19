@@ -30,7 +30,7 @@ namespace DACS_Food.Services
         {
             if (string.IsNullOrWhiteSpace(model.PhoneNumber))
             {
-                throw new InvalidOperationException("Vui lòng nhập số điện thoại để tra cứu đơn hàng sau này.");
+                throw new InvalidOperationException("Vui lòng nhập số điện thoại để quán liên hệ xác nhận đơn hàng.");
             }
 
             if (model.OrderType == OrderType.Delivery && string.IsNullOrWhiteSpace(model.Address))

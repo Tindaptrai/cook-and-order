@@ -2,12 +2,14 @@
 using DACS_Food.Services;
 using DACS_Food.ViewModels;
 using DACS_Food.Data;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using System.Security.Claims;
 using System.Text;
 
 namespace DACS_Food.Controllers
@@ -22,6 +24,7 @@ namespace DACS_Food.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailSender _emailSender;
         private readonly IMemoryCache _cache;
+        private const string ChangePasswordCachePrefix = "change-password:";
 
         public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IOtpService otpService, ApplicationDbContext db, ILoyaltyService loyaltyService, IWebHostEnvironment environment, IEmailSender emailSender, IMemoryCache cache)
         {
@@ -36,14 +39,16 @@ namespace DACS_Food.Controllers
         }
 
         [HttpGet("/dang-nhap")]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
         [HttpPost("/dang-nhap")]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -68,7 +73,109 @@ namespace DACS_Food.Controllers
                 return Redirect("/admin");
             }
 
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost("/dang-nhap-google")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GoogleLogin(string? returnUrl = null)
+        {
+            var schemes = await _signInManager.GetExternalAuthenticationSchemesAsync();
+            if (!schemes.Any(s => s.Name == GoogleDefaults.AuthenticationScheme))
+            {
+                TempData["LoginError"] = "Chưa cấu hình Google Client ID/Secret. Vui lòng điền Authentication:Google trong appsettings.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var redirectUrl = Url.Action(nameof(GoogleLoginCallback), "Account", new { returnUrl });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(GoogleDefaults.AuthenticationScheme, redirectUrl);
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("/dang-nhap-google-callback")]
+        public async Task<IActionResult> GoogleLoginCallback(string? returnUrl = null, string? remoteError = null)
+        {
+            if (!string.IsNullOrWhiteSpace(remoteError))
+            {
+                TempData["LoginError"] = $"Google không thể đăng nhập: {remoteError}";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                TempData["LoginError"] = "Không lấy được thông tin đăng nhập từ Google. Vui lòng thử lại.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var externalResult = await _signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider,
+                info.ProviderKey,
+                isPersistent: false,
+                bypassTwoFactor: true);
+
+            if (externalResult.Succeeded)
+            {
+                var externalUser = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                if (externalUser != null)
+                {
+                    return await RedirectAfterLoginAsync(externalUser, returnUrl);
+                }
+            }
+
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["LoginError"] = "Tài khoản Google chưa cung cấp email. Vui lòng chọn tài khoản Google khác.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                var fullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email.Split('@')[0];
+                var avatarUrl = info.Principal.FindFirstValue("urn:google:picture")
+                    ?? info.Principal.FindFirstValue("picture")
+                    ?? string.Empty;
+
+                user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    FullName = fullName,
+                    AvatarUrl = avatarUrl,
+                    EmailConfirmed = true,
+                    IsEmailVerified = true
+                };
+
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    TempData["LoginError"] = "Không thể tạo tài khoản từ Google. Vui lòng thử lại.";
+                    return RedirectToAction(nameof(Login), new { returnUrl });
+                }
+            }
+            else if (!user.IsEmailVerified || !user.EmailConfirmed)
+            {
+                user.IsEmailVerified = true;
+                user.EmailConfirmed = true;
+                await _userManager.UpdateAsync(user);
+            }
+
+            var addLoginResult = await _userManager.AddLoginAsync(user, info);
+            if (!addLoginResult.Succeeded && !addLoginResult.Errors.Any(e => e.Code == "LoginAlreadyAssociated"))
+            {
+                TempData["LoginError"] = "Không thể liên kết tài khoản Google. Vui lòng thử lại.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return await RedirectAfterLoginAsync(user, returnUrl);
         }
 
         [HttpGet("/Account/ForgotPassword")]
@@ -342,6 +449,141 @@ namespace DACS_Food.Controllers
         }
 
         [Authorize]
+        [HttpGet("/tai-khoan/doi-mat-khau")]
+        public async Task<IActionResult> ChangePassword()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            ViewBag.HasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.OtpSent = TempData["PasswordOtpSent"] as bool? ?? false;
+            ViewBag.Email = user.Email;
+            return View(new ChangePasswordViewModel());
+        }
+
+        [Authorize]
+        [HttpPost("/tai-khoan/doi-mat-khau/gui-otp")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendChangePasswordOtp(ChangePasswordViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            var hasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.HasPassword = hasPassword;
+            ViewBag.Email = user.Email;
+
+            if (!ModelState.IsValid)
+            {
+                return View("ChangePassword", model);
+            }
+
+            if (hasPassword)
+            {
+                if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Vui lòng nhập mật khẩu hiện tại.");
+                    return View("ChangePassword", model);
+                }
+
+                if (!await _userManager.CheckPasswordAsync(user, model.CurrentPassword))
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Mật khẩu hiện tại không đúng.");
+                    return View("ChangePassword", model);
+                }
+            }
+
+            var passwordValidation = await ValidateNewPasswordAsync(user, model.NewPassword);
+            if (!passwordValidation.Succeeded)
+            {
+                foreach (var error in passwordValidation.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View("ChangePassword", model);
+            }
+
+            var result = await _otpService.SendOtpAsync(user.Id, user.Email, OtpPurpose.ChangePassword, GetIpAddress());
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message ?? "Không thể gửi mã OTP. Vui lòng thử lại.");
+                return View("ChangePassword", model);
+            }
+
+            _cache.Set(GetChangePasswordCacheKey(user.Id), model.NewPassword, TimeSpan.FromMinutes(5));
+            TempData["PasswordMessage"] = result.Message;
+            TempData["PasswordOtpSent"] = true;
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        [Authorize]
+        [HttpPost("/tai-khoan/doi-mat-khau")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ConfirmChangePasswordOtpViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            ViewBag.HasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.Email = user.Email;
+            ViewBag.OtpSent = true;
+
+            if (!ModelState.IsValid)
+            {
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            var otpResult = await _otpService.VerifyAsync(user.Email, model.Code, OtpPurpose.ChangePassword);
+            if (!otpResult.Success)
+            {
+                ModelState.AddModelError(nameof(model.Code), otpResult.Message ?? "Mã OTP không hợp lệ.");
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            if (!_cache.TryGetValue(GetChangePasswordCacheKey(user.Id), out string? newPassword) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                ModelState.AddModelError(string.Empty, "Phiên đổi mật khẩu đã hết hạn. Vui lòng nhập lại thông tin và gửi OTP mới.");
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            IdentityResult passwordResult;
+            if (await _userManager.HasPasswordAsync(user))
+            {
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                passwordResult = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
+            }
+            else
+            {
+                passwordResult = await _userManager.AddPasswordAsync(user, newPassword);
+            }
+
+            if (!passwordResult.Succeeded)
+            {
+                foreach (var error in passwordResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            _cache.Remove(GetChangePasswordCacheKey(user.Id));
+            await _signInManager.RefreshSignInAsync(user);
+            TempData["PasswordMessage"] = "Đã đổi mật khẩu thành công.";
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        [Authorize]
         [HttpGet("/lich-su-don-hang")]
         public async Task<IActionResult> OrderHistory()
         {
@@ -361,6 +603,40 @@ namespace DACS_Food.Controllers
         private string GetIpAddress()
         {
             return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
+        private string GetChangePasswordCacheKey(string userId)
+        {
+            return $"{ChangePasswordCachePrefix}{userId}";
+        }
+
+        private async Task<IdentityResult> ValidateNewPasswordAsync(ApplicationUser user, string newPassword)
+        {
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(_userManager, user, newPassword);
+                if (!result.Succeeded)
+                {
+                    return result;
+                }
+            }
+
+            return IdentityResult.Success;
+        }
+
+        private async Task<IActionResult> RedirectAfterLoginAsync(ApplicationUser user, string? returnUrl)
+        {
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return Redirect("/admin");
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         private bool CheckForgotPasswordRateLimit(string email, string ipAddress)

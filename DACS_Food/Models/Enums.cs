@@ -85,6 +85,7 @@ namespace DACS_Food.Models
     {
         Register = 1,
         Login = 2,
-        ForgotPassword = 3
+        ForgotPassword = 3,
+        ChangePassword = 4
     }
 }
