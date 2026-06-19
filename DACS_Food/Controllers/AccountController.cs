@@ -24,6 +24,7 @@ namespace DACS_Food.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailSender _emailSender;
         private readonly IMemoryCache _cache;
+        private const string ChangePasswordCachePrefix = "change-password:";
 
         public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IOtpService otpService, ApplicationDbContext db, ILoyaltyService loyaltyService, IWebHostEnvironment environment, IEmailSender emailSender, IMemoryCache cache)
         {
@@ -448,6 +449,141 @@ namespace DACS_Food.Controllers
         }
 
         [Authorize]
+        [HttpGet("/tai-khoan/doi-mat-khau")]
+        public async Task<IActionResult> ChangePassword()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            ViewBag.HasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.OtpSent = TempData["PasswordOtpSent"] as bool? ?? false;
+            ViewBag.Email = user.Email;
+            return View(new ChangePasswordViewModel());
+        }
+
+        [Authorize]
+        [HttpPost("/tai-khoan/doi-mat-khau/gui-otp")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendChangePasswordOtp(ChangePasswordViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            var hasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.HasPassword = hasPassword;
+            ViewBag.Email = user.Email;
+
+            if (!ModelState.IsValid)
+            {
+                return View("ChangePassword", model);
+            }
+
+            if (hasPassword)
+            {
+                if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Vui lòng nhập mật khẩu hiện tại.");
+                    return View("ChangePassword", model);
+                }
+
+                if (!await _userManager.CheckPasswordAsync(user, model.CurrentPassword))
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Mật khẩu hiện tại không đúng.");
+                    return View("ChangePassword", model);
+                }
+            }
+
+            var passwordValidation = await ValidateNewPasswordAsync(user, model.NewPassword);
+            if (!passwordValidation.Succeeded)
+            {
+                foreach (var error in passwordValidation.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View("ChangePassword", model);
+            }
+
+            var result = await _otpService.SendOtpAsync(user.Id, user.Email, OtpPurpose.ChangePassword, GetIpAddress());
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message ?? "Không thể gửi mã OTP. Vui lòng thử lại.");
+                return View("ChangePassword", model);
+            }
+
+            _cache.Set(GetChangePasswordCacheKey(user.Id), model.NewPassword, TimeSpan.FromMinutes(5));
+            TempData["PasswordMessage"] = result.Message;
+            TempData["PasswordOtpSent"] = true;
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        [Authorize]
+        [HttpPost("/tai-khoan/doi-mat-khau")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ConfirmChangePasswordOtpViewModel model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            ViewBag.HasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.Email = user.Email;
+            ViewBag.OtpSent = true;
+
+            if (!ModelState.IsValid)
+            {
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            var otpResult = await _otpService.VerifyAsync(user.Email, model.Code, OtpPurpose.ChangePassword);
+            if (!otpResult.Success)
+            {
+                ModelState.AddModelError(nameof(model.Code), otpResult.Message ?? "Mã OTP không hợp lệ.");
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            if (!_cache.TryGetValue(GetChangePasswordCacheKey(user.Id), out string? newPassword) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                ModelState.AddModelError(string.Empty, "Phiên đổi mật khẩu đã hết hạn. Vui lòng nhập lại thông tin và gửi OTP mới.");
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            IdentityResult passwordResult;
+            if (await _userManager.HasPasswordAsync(user))
+            {
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                passwordResult = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
+            }
+            else
+            {
+                passwordResult = await _userManager.AddPasswordAsync(user, newPassword);
+            }
+
+            if (!passwordResult.Succeeded)
+            {
+                foreach (var error in passwordResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View("ChangePassword", new ChangePasswordViewModel());
+            }
+
+            _cache.Remove(GetChangePasswordCacheKey(user.Id));
+            await _signInManager.RefreshSignInAsync(user);
+            TempData["PasswordMessage"] = "Đã đổi mật khẩu thành công.";
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        [Authorize]
         [HttpGet("/lich-su-don-hang")]
         public async Task<IActionResult> OrderHistory()
         {
@@ -467,6 +603,25 @@ namespace DACS_Food.Controllers
         private string GetIpAddress()
         {
             return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
+        private string GetChangePasswordCacheKey(string userId)
+        {
+            return $"{ChangePasswordCachePrefix}{userId}";
+        }
+
+        private async Task<IdentityResult> ValidateNewPasswordAsync(ApplicationUser user, string newPassword)
+        {
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(_userManager, user, newPassword);
+                if (!result.Succeeded)
+                {
+                    return result;
+                }
+            }
+
+            return IdentityResult.Success;
         }
 
         private async Task<IActionResult> RedirectAfterLoginAsync(ApplicationUser user, string? returnUrl)
