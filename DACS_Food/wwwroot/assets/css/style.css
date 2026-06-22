@@ -1620,8 +1620,20 @@ img { width: 100%; display: block; }
   cursor: pointer;
 }
 
+.cart-qty button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+  background: #f3f4f6;
+}
+
 .cart-qty .cart-remove {
   padding: 0 10px;
+}
+
+.cart-stock-note {
+  color: #047857;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .cart-total {
@@ -3619,6 +3631,236 @@ body.modal-open {
   display: contents;
 }
 
+.inventory-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.inventory-list {
+  display: grid;
+  gap: 18px;
+}
+
+.inventory-search-panel {
+  display: grid;
+  grid-template-columns: minmax(230px, .35fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(17, 24, 39, .05);
+}
+
+.inventory-search-panel label {
+  display: block;
+  margin-bottom: 4px;
+  color: #111827;
+  font-weight: 950;
+}
+
+.inventory-search-panel span {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.inventory-search-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.inventory-search-box input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 850;
+  color: #111827;
+  outline: none;
+}
+
+.inventory-search-box input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .14);
+}
+
+.inventory-search-box button {
+  min-width: 72px;
+  min-height: 46px;
+  border: none;
+  border-radius: 14px;
+  background: #111827;
+  color: #fff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.inventory-empty-state {
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px dashed #fdba74;
+  border-radius: 16px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 900;
+  text-align: center;
+}
+
+.inventory-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(17, 24, 39, .05);
+}
+
+.inventory-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+.inventory-card-head h2 {
+  color: #111827;
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 10px 0 4px;
+}
+
+.inventory-card-head p {
+  color: #6b7280;
+  font-weight: 800;
+  margin: 0;
+}
+
+.inventory-meta {
+  min-width: 126px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  text-align: right;
+}
+
+.inventory-meta strong {
+  display: block;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.inventory-meta span {
+  color: #6b7280;
+  font-weight: 900;
+}
+
+.inventory-season-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 900;
+}
+
+.inventory-season-line strong {
+  color: #b45309;
+  white-space: nowrap;
+}
+
+.inventory-form {
+  display: grid;
+  gap: 14px;
+}
+
+.inventory-form-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 160px 160px;
+  gap: 12px;
+}
+
+.inventory-form label,
+.inventory-months {
+  display: grid;
+  gap: 8px;
+  color: #374151;
+  font-weight: 900;
+}
+
+.inventory-form input,
+.inventory-form textarea {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  font-weight: 800;
+  color: #111827;
+  background: #fff;
+}
+
+.inventory-form textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+.inventory-months > div {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.inventory-months label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 9px 8px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.inventory-months input {
+  width: 16px;
+  height: 16px;
+}
+
+.inventory-months small {
+  color: #6b7280;
+  font-weight: 800;
+}
+
+.inventory-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.inventory-auto-status {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 850;
+}
+
 .admin-wide-container {
   width: min(1760px, 98vw);
 }
@@ -3782,6 +4024,34 @@ body.modal-open {
   .operations-stats {
     grid-template-columns: 1fr;
   }
+
+  .inventory-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inventory-search-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-card-head,
+  .inventory-season-line,
+  .inventory-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inventory-meta {
+    text-align: left;
+    width: 100%;
+  }
+
+  .inventory-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-months > div {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* HEADER / NAVBAR STABILITY */
@@ -3879,26 +4149,32 @@ body.modal-open {
 /* ADMIN HEADER */
 @media (min-width: 1081px) {
   .admin-header .navbar {
-    width: min(1400px, 96%);
-    gap: 18px;
+    width: min(1600px, 98%);
+    gap: 22px;
+    align-items: center;
   }
 
   .admin-header .logo-text h2 {
-    font-size: 26px;
+    font-size: 22px;
   }
 
   .admin-header .logo-text span {
-    font-size: 16px;
+    font-size: 13px;
+    display: block;
   }
 
   .admin-header .nav-links {
     justify-content: flex-start;
-    gap: 16px;
-    font-size: 20px;
+    gap: clamp(14px, 1.4vw, 24px);
+    row-gap: 10px;
+    flex-wrap: wrap;
+    font-size: 16px;
+    line-height: 1.25;
   }
 
   .admin-header .nav-links a {
-    line-height: 1;
+    line-height: 1.25;
+    padding: 8px 0;
   }
 
   .admin-logout-form {
@@ -3907,9 +4183,9 @@ body.modal-open {
   }
 
 .admin-logout-btn {
-    min-height: 44px;
-    padding: 12px 18px;
-    font-size: 18px;
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 15px;
     white-space: nowrap;
   }
 }
@@ -3995,6 +4271,23 @@ body.modal-open {
 }
 
 @media (max-width: 640px) {
+  .inventory-summary,
+  .inventory-months > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inventory-card {
+    padding: 14px;
+  }
+
+  .inventory-card-head h2 {
+    font-size: 20px;
+  }
+
+  .inventory-search-box {
+    grid-template-columns: 1fr;
+  }
+
   .home-3d-hero {
     min-height: auto;
   }

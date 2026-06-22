@@ -1,0 +1,193 @@
+@model DACS_Food.ViewModels.InventoryPageViewModel
+@{
+    ViewData["Title"] = "Quản lý kho/nguyên liệu";
+    var monthNames = new[]
+    {
+        "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+        "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+    };
+}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="badge">Admin</div>
+        <h1>Quản lý kho/nguyên liệu</h1>
+        <p>Theo dõi nguyên liệu, số lượng còn lại và mùa bán của từng món ăn.</p>
+    </div>
+</section>
+
+<section class="section section-light">
+    <div class="container admin-wide-container">
+        @if (TempData["InventoryMessage"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+
+        <div class="inventory-summary">
+            <div class="simple-card">
+                <h3>@Model.Items.Count</h3>
+                <p>Tổng món đang quản lý</p>
+            </div>
+            <div class="simple-card">
+                <h3>@Model.Items.Count(x => x.IsActive && x.IsAvailable)</h3>
+                <p>Món đang bán</p>
+            </div>
+            <div class="simple-card">
+                <h3>@Model.Items.Count(x => x.IsActive && !x.IsAvailable)</h3>
+                <p>Món hết hàng/trái mùa</p>
+            </div>
+            <div class="simple-card">
+                <h3>@monthNames[Model.CurrentMonth - 1]</h3>
+                <p>Tháng hiện tại</p>
+            </div>
+        </div>
+
+        <div class="inventory-search-panel">
+            <div>
+                <label for="inventorySearchInput">Tìm nhanh trong kho</label>
+                <span>Lọc theo tên món, danh mục, nguyên liệu hoặc ghi chú kho.</span>
+            </div>
+            <div class="inventory-search-box">
+                <input id="inventorySearchInput" type="search" placeholder="Ví dụ: bowl cá hồi, healthy, gà..." autocomplete="off" />
+                <button id="inventorySearchClear" type="button" hidden>Xóa</button>
+            </div>
+        </div>
+        <p class="inventory-empty-state" id="inventorySearchEmpty" hidden>Không tìm thấy món phù hợp trong kho.</p>
+
+        @if (!Model.Items.Any())
+        {
+            <p style="text-align:center; color:#6b7280; padding:48px 0;">
+                Chưa có món ăn nào để quản lý kho.
+            </p>
+        }
+        else
+        {
+            <div class="inventory-list">
+                @foreach (var item in Model.Items)
+                {
+                    var seasonLabel = item.HasSeason
+                        ? string.Join(", ", item.AvailableMonths.Select(month => monthNames[month - 1]))
+                        : "Bán quanh năm";
+                    var statusText = !item.IsActive
+                        ? "Đã ẩn khỏi menu"
+                        : item.IsAvailable
+                            ? "Còn bán"
+                            : "Hết hàng/trái mùa";
+                    var statusClass = !item.IsActive
+                        ? "badge-cancel"
+                        : item.IsAvailable
+                            ? "badge-done"
+                            : "badge-waiting";
+
+                    <article class="inventory-card" data-inventory-search="@($"{item.FoodName} {item.CategoryName} {item.Ingredients} {item.InventoryNote} {seasonLabel}")">
+                        <div class="inventory-card-head">
+                            <div>
+                                <span class="badge-soft @statusClass">@statusText</span>
+                                <h2>@item.FoodName</h2>
+                                <p>@item.CategoryName</p>
+                            </div>
+                            <div class="inventory-meta">
+                                <strong>@(item.StockQuantity?.ToString() ?? "Chưa nhập")</strong>
+                                <span>@item.Unit</span>
+                            </div>
+                        </div>
+
+                        <div class="inventory-season-line">
+                            <span>@seasonLabel</span>
+                            @if (item.HasSeason && !item.IsInCurrentSeason)
+                            {
+                                <strong>Không thuộc tháng hiện tại</strong>
+                            }
+                        </div>
+
+                        <form class="inventory-form" method="post" action="/admin/kho-nguyen-lieu/cap-nhat/@item.FoodItemId">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="FoodItemId" value="@item.FoodItemId" />
+
+                            <div class="inventory-form-grid">
+                                <label>
+                                    <span>Nguyên liệu chính</span>
+                                    <textarea name="Ingredients" rows="3" placeholder="Ví dụ: Cơm, gà, rau, sốt tiêu đen">@item.Ingredients</textarea>
+                                </label>
+
+                                <label>
+                                    <span>Ghi chú kho</span>
+                                    <textarea name="InventoryNote" rows="3" placeholder="Ví dụ: Gà nhập sáng, rau chỉ dùng trong ngày">@item.InventoryNote</textarea>
+                                </label>
+
+                                <label>
+                                    <span>Số lượng còn</span>
+                                    <input name="StockQuantity" type="number" min="0" step="1" value="@item.StockQuantity" placeholder="Ví dụ: 20" />
+                                </label>
+
+                                <label>
+                                    <span>Đơn vị</span>
+                                    <input name="Unit" value="@item.Unit" placeholder="phần, kg, ly..." />
+                                </label>
+                            </div>
+
+                            <div class="inventory-months">
+                                <span>Tháng có bán</span>
+                                <div>
+                                    @for (var month = 1; month <= 12; month++)
+                                    {
+                                        var isChecked = item.AvailableMonths.Contains(month);
+                                        <label>
+                                            <input type="checkbox" name="AvailableMonths" value="@month" @(isChecked ? "checked" : "") />
+                                            Tháng @(month)
+                                        </label>
+                                    }
+                                </div>
+                                <small>Bỏ trống nếu món bán quanh năm. Nếu chọn tháng mà tháng hiện tại không khớp, món sẽ tự chuyển hết hàng.</small>
+                            </div>
+
+                            <div class="inventory-actions">
+                                <p class="inventory-auto-status">Trạng thái tự cập nhật theo số lượng còn và tháng có bán.</p>
+                                <button class="btn btn-primary" type="submit">Lưu kho</button>
+                            </div>
+                        </form>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const input = document.getElementById('inventorySearchInput');
+            const clear = document.getElementById('inventorySearchClear');
+            const empty = document.getElementById('inventorySearchEmpty');
+            const cards = Array.from(document.querySelectorAll('[data-inventory-search]'));
+            const normalize = value => String(value || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd');
+
+            function applySearch() {
+                const keyword = normalize(input?.value);
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const matched = !keyword || normalize(card.dataset.inventorySearch).includes(keyword);
+                    card.hidden = !matched;
+                    if (matched) visibleCount += 1;
+                });
+
+                if (clear) clear.hidden = !keyword;
+                if (empty) empty.hidden = visibleCount > 0;
+            }
+
+            input?.addEventListener('input', applySearch);
+            clear?.addEventListener('click', () => {
+                if (!input) return;
+                input.value = '';
+                input.focus();
+                applySearch();
+            });
+        })();
+    </script>
+}

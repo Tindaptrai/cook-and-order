@@ -10,21 +10,31 @@ function saveCart() {
   localStorage.setItem('foodie_cart', JSON.stringify(cart));
 }
 
-function clampCartQuantity(value) {
+function getCartItemMaxQuantity(item) {
+  const stockQuantity = Number.parseInt(item?.stockQuantity, 10);
+  if (!Number.isNaN(stockQuantity) && stockQuantity > 0) {
+    return Math.min(stockQuantity, 20);
+  }
+
+  return 20;
+}
+
+function clampCartQuantity(value, maxQuantity = 20) {
   const quantity = Number.parseInt(value, 10);
+  const max = Math.max(1, Number.parseInt(maxQuantity, 10) || 20);
   if (Number.isNaN(quantity)) return 1;
-  return Math.min(Math.max(quantity, 1), 20);
+  return Math.min(Math.max(quantity, 1), max);
 }
 
 function changeQuantityInput(inputId, delta) {
   const input = document.getElementById(inputId);
   if (!input) return;
-  input.value = clampCartQuantity(Number(input.value || 1) + delta);
+  input.value = clampCartQuantity(Number(input.value || 1) + delta, input.dataset.maxQuantity);
 }
 
 function normalizeQuantityInput(input) {
   if (!input) return;
-  input.value = clampCartQuantity(input.value);
+  input.value = clampCartQuantity(input.value, input.dataset.maxQuantity);
 }
 
 function mapApiCartItems(data) {
@@ -35,7 +45,8 @@ function mapApiCartItems(data) {
     name: item.name,
     price: item.price,
     image: item.image,
-    quantity: item.quantity
+    quantity: item.quantity,
+    stockQuantity: item.stockQuantity
   }));
 }
 
@@ -137,8 +148,9 @@ function filterFoods() {
   });
 }
 
-async function addToCart(name, price, image = '', id = 0, quantity = 1) {
-  const addQuantity = clampCartQuantity(quantity);
+async function addToCart(name, price, image = '', id = 0, quantity = 1, stockQuantity = null) {
+  const maxQuantity = getCartItemMaxQuantity({ stockQuantity });
+  const addQuantity = clampCartQuantity(quantity, maxQuantity);
   if (id) {
     try {
       const data = await postCartItemToApi(id, addQuantity);
@@ -159,11 +171,12 @@ async function addToCart(name, price, image = '', id = 0, quantity = 1) {
   const existing = cart.find(item => item.name === name);
 
   if (existing) {
-    existing.quantity = Math.min(20, existing.quantity + addQuantity);
+    if (stockQuantity !== null && stockQuantity !== undefined) existing.stockQuantity = stockQuantity;
+    existing.quantity = Math.min(getCartItemMaxQuantity(existing), existing.quantity + addQuantity);
     if (image && !existing.image) existing.image = image;
     if (id && !existing.id) existing.id = id;
   } else {
-    cart.push({ id, name, price, image, quantity: addQuantity });
+    cart.push({ id, name, price, image, quantity: addQuantity, stockQuantity });
   }
 
   saveCart();
@@ -175,14 +188,14 @@ async function addToCart(name, price, image = '', id = 0, quantity = 1) {
 
 function addToCartFromQuantity(name, price, image, id, inputId) {
   const input = document.getElementById(inputId);
-  addToCart(name, price, image, id, clampCartQuantity(input ? input.value : 1));
+  addToCart(name, price, image, id, clampCartQuantity(input ? input.value : 1, input?.dataset?.maxQuantity), input?.dataset?.maxQuantity || null);
 }
 
 async function changeCartQuantity(index, delta) {
   if (!cart[index]) return;
+  const nextQuantity = clampCartQuantity(cart[index].quantity + delta, getCartItemMaxQuantity(cart[index]));
   if (cart[index].cartItemId) {
     try {
-      const nextQuantity = clampCartQuantity(cart[index].quantity + delta);
       const data = await updateCartItemInApi(cart[index].cartItemId, nextQuantity);
       applyApiCart(data);
       return;
@@ -191,7 +204,7 @@ async function changeCartQuantity(index, delta) {
     }
   }
 
-  cart[index].quantity = clampCartQuantity(cart[index].quantity + delta);
+  cart[index].quantity = nextQuantity;
   saveCart();
   renderCart();
   renderCheckout();
@@ -235,7 +248,11 @@ function renderCart() {
     return;
   }
 
-  cartList.innerHTML = cart.map((item, index) => `
+  cartList.innerHTML = cart.map((item, index) => {
+    const maxQuantity = getCartItemMaxQuantity(item);
+    const reachedMax = item.quantity >= maxQuantity;
+
+    return `
     <div class="cart-item cart-item-rich">
       <img src="${escapeHtml(item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80')}" alt="${escapeHtml(item.name)}" />
       <div class="cart-item-info">
@@ -244,13 +261,15 @@ function renderCart() {
         <div class="cart-qty">
           <button type="button" onclick="changeCartQuantity(${index}, -1)">-</button>
           <b>${item.quantity}</b>
-          <button type="button" onclick="changeCartQuantity(${index}, 1)">+</button>
+          <button type="button" ${reachedMax ? 'disabled title="Đã đạt số lượng còn trong kho"' : ''} onclick="changeCartQuantity(${index}, 1)">+</button>
           <button type="button" class="cart-remove" onclick="removeCartItem(${index})">Xóa</button>
         </div>
+        ${Number.isFinite(Number(item.stockQuantity)) ? `<small class="cart-stock-note">Còn ${maxQuantity} phần trong kho</small>` : ''}
       </div>
       <strong>${formatVND(item.price * item.quantity)}</strong>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function toggleCart() {

@@ -89,6 +89,7 @@ namespace DACS_Food.Controllers.Api
                 Price = x.UnitPrice,
                 Image = x.FoodItem?.ImageUrl ?? string.Empty,
                 Quantity = x.Quantity,
+                StockQuantity = cart.StockQuantities.TryGetValue(x.FoodItemId, out var stockQuantity) ? stockQuantity : null,
                 LineTotal = x.UnitPrice * x.Quantity
             }).ToList();
 

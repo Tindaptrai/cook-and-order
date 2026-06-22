@@ -5,6 +5,7 @@ namespace DACS_Food.ViewModels
     public class CartViewModel
     {
         public IReadOnlyList<CartItem> Items { get; set; } = Array.Empty<CartItem>();
+        public IReadOnlyDictionary<int, int?> StockQuantities { get; set; } = new Dictionary<int, int?>();
         public decimal Subtotal => Items.Sum(x => x.UnitPrice * x.Quantity);
     }
 

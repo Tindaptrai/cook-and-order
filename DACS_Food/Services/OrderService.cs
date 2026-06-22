@@ -39,7 +39,8 @@ namespace DACS_Food.Services
             }
 
             var cart = await _cartService.GetOrCreateCartAsync(userId, sessionId);
-            var draftItems = cart.Items.Select(x => new OrderDraftItem(
+            var normalizedCart = await _cartService.GetCartViewModelAsync(userId, sessionId);
+            var draftItems = normalizedCart.Items.Select(x => new OrderDraftItem(
                 x.FoodItemId,
                 x.FoodItem?.Name ?? "Món ăn",
                 x.UnitPrice,

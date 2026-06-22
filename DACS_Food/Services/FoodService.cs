@@ -19,10 +19,10 @@ namespace DACS_Food.Services
             page = Math.Max(1, page);
             pageSize = Math.Max(1, pageSize);
 
-            // Nguon du lieu chinh cua phan Mon an: chi hien thi mon dang hoat dong va con ban.
+            // Nguon du lieu chinh cua phan Mon an: hien thi mon dang hoat dong, ke ca mon tam het de giao dien bao dung trang thai.
             var query = _db.FoodItems
                 .Include(x => x.FoodCategory)
-                .Where(x => x.IsActive && x.IsAvailable);
+                .Where(x => x.IsActive);
 
             // Cac bo loc nay phuc vu man hinh Menu: danh muc, tu khoa, nhom mon va danh muc con.
             if (!string.IsNullOrWhiteSpace(category) && category != "all")

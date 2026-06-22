@@ -1,0 +1,35 @@
+{
+  "10": {
+    "StockQuantity": null,
+    "Unit": "ph\u1EA7n",
+    "AvailableMonths": [],
+    "InventoryNote": ""
+  },
+  "8": {
+    "StockQuantity": null,
+    "Unit": "ph\u1EA7n",
+    "AvailableMonths": [],
+    "InventoryNote": ""
+  },
+  "22": {
+    "StockQuantity": 10,
+    "Unit": "ph\u1EA7n",
+    "AvailableMonths": [
+      6,
+      7
+    ],
+    "InventoryNote": ""
+  },
+  "9": {
+    "StockQuantity": 0,
+    "Unit": "ph\u1EA7n",
+    "AvailableMonths": [],
+    "InventoryNote": ""
+  },
+  "3": {
+    "StockQuantity": 10,
+    "Unit": "ph\u1EA7n",
+    "AvailableMonths": [],
+    "InventoryNote": ""
+  }
+}

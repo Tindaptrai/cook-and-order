@@ -2,16 +2,20 @@ using DACS_Food.Data;
 using DACS_Food.Models;
 using DACS_Food.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DACS_Food.Services
 {
     public class CartService : ICartService
     {
         private readonly ApplicationDbContext _db;
+        private readonly string _inventoryMetadataPath;
+        private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-        public CartService(ApplicationDbContext db)
+        public CartService(ApplicationDbContext db, IWebHostEnvironment env)
         {
             _db = db;
+            _inventoryMetadataPath = Path.Combine(env.ContentRootPath, "Data", "inventory-metadata.json");
         }
 
         public async Task<Cart> GetOrCreateCartAsync(string? userId, string sessionId)
@@ -35,14 +39,31 @@ namespace DACS_Food.Services
         public async Task<CartViewModel> GetCartViewModelAsync(string? userId, string sessionId)
         {
             var cart = await GetOrCreateCartAsync(userId, sessionId);
-            return new CartViewModel { Items = cart.Items.ToList() };
+            var stockQuantities = await LoadInventoryStockAsync();
+            var changed = NormalizeCartQuantities(cart, stockQuantities);
+            if (changed)
+            {
+                cart.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+
+            return new CartViewModel
+            {
+                Items = cart.Items.ToList(),
+                StockQuantities = stockQuantities
+            };
         }
 
         public async Task<bool> AddAsync(string? userId, string sessionId, int foodItemId, int quantity)
         {
-            quantity = Math.Clamp(quantity, 1, 20);
             var food = await _db.FoodItems.FirstOrDefaultAsync(x => x.Id == foodItemId && x.IsActive && x.IsAvailable);
             if (food == null) return false;
+
+            var stockQuantities = await LoadInventoryStockAsync();
+            var maxQuantity = GetMaxQuantity(foodItemId, stockQuantities);
+            if (maxQuantity <= 0) return false;
+
+            quantity = Math.Clamp(quantity, 1, maxQuantity);
 
             var cart = await GetOrCreateCartAsync(userId, sessionId);
             var item = cart.Items.FirstOrDefault(x => x.FoodItemId == foodItemId);
@@ -52,7 +73,7 @@ namespace DACS_Food.Services
             }
             else
             {
-                item.Quantity = Math.Min(20, item.Quantity + quantity);
+                item.Quantity = Math.Min(maxQuantity, item.Quantity + quantity);
             }
 
             cart.UpdatedAt = DateTime.UtcNow;
@@ -62,11 +83,22 @@ namespace DACS_Food.Services
 
         public async Task UpdateAsync(string? userId, string sessionId, int cartItemId, int quantity)
         {
-            quantity = Math.Clamp(quantity, 1, 20);
             var cart = await GetOrCreateCartAsync(userId, sessionId);
             var item = cart.Items.FirstOrDefault(x => x.Id == cartItemId);
             if (item == null) return;
 
+            var stockQuantities = await LoadInventoryStockAsync();
+            var maxQuantity = GetMaxQuantity(item.FoodItemId, stockQuantities);
+            if (maxQuantity <= 0 || item.FoodItem == null || !item.FoodItem.IsActive || !item.FoodItem.IsAvailable)
+            {
+                _db.CartItems.Remove(item);
+                cart.Items.Remove(item);
+                cart.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+                return;
+            }
+
+            quantity = Math.Clamp(quantity, 1, maxQuantity);
             item.Quantity = quantity;
 
             cart.UpdatedAt = DateTime.UtcNow;
@@ -89,6 +121,67 @@ namespace DACS_Food.Services
             _db.CartItems.RemoveRange(cart.Items);
             cart.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
+        }
+
+        private bool NormalizeCartQuantities(Cart cart, IReadOnlyDictionary<int, int?> stockQuantities)
+        {
+            var changed = false;
+
+            foreach (var item in cart.Items.ToList())
+            {
+                var maxQuantity = GetMaxQuantity(item.FoodItemId, stockQuantities);
+                if (maxQuantity <= 0 || item.FoodItem == null || !item.FoodItem.IsActive || !item.FoodItem.IsAvailable)
+                {
+                    _db.CartItems.Remove(item);
+                    cart.Items.Remove(item);
+                    changed = true;
+                    continue;
+                }
+
+                if (item.Quantity > maxQuantity)
+                {
+                    item.Quantity = maxQuantity;
+                    changed = true;
+                }
+
+                if (item.Quantity < 1)
+                {
+                    item.Quantity = 1;
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static int GetMaxQuantity(int foodItemId, IReadOnlyDictionary<int, int?> stockQuantities)
+        {
+            if (stockQuantities.TryGetValue(foodItemId, out var stockQuantity) && stockQuantity.HasValue)
+            {
+                return Math.Clamp(stockQuantity.Value, 0, 20);
+            }
+
+            return 20;
+        }
+
+        private async Task<Dictionary<int, int?>> LoadInventoryStockAsync()
+        {
+            if (!File.Exists(_inventoryMetadataPath))
+            {
+                return new Dictionary<int, int?>();
+            }
+
+            await using var stream = File.OpenRead(_inventoryMetadataPath);
+            var data = await JsonSerializer.DeserializeAsync<Dictionary<string, InventoryMetadata>>(stream, JsonOptions);
+            return data?
+                .Where(x => int.TryParse(x.Key, out _))
+                .ToDictionary(x => int.Parse(x.Key), x => x.Value.StockQuantity)
+                ?? new Dictionary<int, int?>();
+        }
+
+        private sealed class InventoryMetadata
+        {
+            public int? StockQuantity { get; set; }
         }
     }
 }

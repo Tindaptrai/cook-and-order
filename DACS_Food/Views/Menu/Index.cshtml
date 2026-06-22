@@ -39,8 +39,15 @@
         </div>
 
         <div class="menu-search-panel">
-            <label for="menuQuickSearch">Tìm nhanh món ăn</label>
-            <input id="menuQuickSearch" type="search" class="form-control" placeholder="Nhập tên món, danh mục hoặc nguyên liệu..." autocomplete="off" />
+            <div class="menu-search-copy">
+                <label for="menuQuickSearch">Tìm nhanh món ăn</label>
+                <span>Tên món, danh mục hoặc nguyên liệu đều tìm được.</span>
+            </div>
+            <div class="menu-search-box">
+                <span class="menu-search-icon" aria-hidden="true"></span>
+                <input id="menuQuickSearch" type="search" placeholder="Ví dụ: phở bò, món chay, gà..." autocomplete="off" />
+                <button class="menu-search-clear" id="menuSearchClear" type="button" hidden>Xóa</button>
+            </div>
         </div>
         <p class="menu-empty-state" id="menuEmptyState" hidden>Không tìm thấy kết quả phù hợp. Thử đổi từ khóa hoặc chọn danh mục khác.</p>
 

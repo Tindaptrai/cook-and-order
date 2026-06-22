@@ -386,8 +386,9 @@ function getMenuSource() {
   const apiSlugs = new Set(apiMenuItems.map(item => item.slug).filter(Boolean));
   const apiNames = new Set(apiMenuItems.map(item => normalizeMenuImageKey(item.name)));
   const missingDedicatedItems = DEDICATED_MENU_ITEMS.filter(item =>
-    (item.slug && !apiSlugs.has(item.slug)) ||
-    (!item.slug && !apiNames.has(normalizeMenuImageKey(item.name))));
+    item.slug
+      ? !apiSlugs.has(item.slug) && !apiNames.has(normalizeMenuImageKey(item.name))
+      : !apiNames.has(normalizeMenuImageKey(item.name)));
 
   return [...apiMenuItems, ...missingDedicatedItems];
 }
@@ -425,32 +426,43 @@ function menuPriceTemplate(item) {
   return `<strong>${formatMenuPrice(item.price)}</strong>`;
 }
 
-function clampMenuQuantity(value) {
+function getMenuMaxQuantity(item) {
+  const stockQuantity = Number.parseInt(item?.stockQuantity, 10);
+  if (!Number.isNaN(stockQuantity) && stockQuantity > 0) {
+    return Math.min(stockQuantity, MENU_MAX_QUANTITY);
+  }
+
+  return MENU_MAX_QUANTITY;
+}
+
+function clampMenuQuantity(value, maxQuantity = MENU_MAX_QUANTITY) {
   const quantity = Number.parseInt(value, 10);
+  const max = Math.max(1, Number.parseInt(maxQuantity, 10) || MENU_MAX_QUANTITY);
   if (Number.isNaN(quantity)) return 1;
-  return Math.min(Math.max(quantity, 1), MENU_MAX_QUANTITY);
+  return Math.min(Math.max(quantity, 1), max);
 }
 
 function getMenuQuantity(itemId) {
   const input = document.getElementById(`menuQty-${itemId}`);
-  return clampMenuQuantity(input ? input.value : 1);
+  return clampMenuQuantity(input ? input.value : 1, input?.dataset?.maxQuantity);
 }
 
 function changeMenuQuantity(itemId, delta) {
   const input = document.getElementById(`menuQty-${itemId}`);
   if (!input) return;
-  input.value = clampMenuQuantity(Number(input.value || 1) + delta);
+  input.value = clampMenuQuantity(Number(input.value || 1) + delta, input.dataset.maxQuantity);
 }
 
 function normalizeMenuQuantity(input) {
   if (!input) return;
-  input.value = clampMenuQuantity(input.value);
+  input.value = clampMenuQuantity(input.value, input.dataset.maxQuantity);
 }
 
 function menuAddToCart(item, quantity = 1) {
   if (!item || item.isAvailable === false) return;
+  const safeQuantity = clampMenuQuantity(quantity, getMenuMaxQuantity(item));
   if (typeof addToCart === 'function') {
-    addToCart(item.name, item.discountPrice || item.price, getMenuItemImage(item), item.id, quantity);
+    addToCart(item.name, item.discountPrice || item.price, getMenuItemImage(item), item.id, safeQuantity, item.stockQuantity);
   }
 }
 
@@ -497,6 +509,7 @@ function mapApiMenuItem(item) {
     servingSize: item.servingSize || '1 người',
     spiceLevel: item.spiceLevel || 'Không cay',
     isAvailable: item.isAvailable !== false,
+    stockQuantity: item.stockQuantity,
     isFeatured: item.isFeatured || item.isBestSeller,
     isVegetarian: item.isVegetarian || item.mainCategory === 'Món chay',
     allergy: item.allergens || item.allergyNote || MENU_ALLERGY_NOTE
@@ -536,6 +549,7 @@ function renderMenuCategoryNav() {
 
 function menuCardTemplate(item) {
   const detailUrl = getMenuDetailUrl(item);
+  const maxQuantity = getMenuMaxQuantity(item);
   return `
     <article class="menu-card" data-detail-url="${escapeHtml(detailUrl)}" onclick="openMenuCardDetail(this)" tabindex="0" role="link" aria-label="Xem chi tiết ${escapeHtml(item.name)}">
       <div class="menu-card-open">
@@ -562,7 +576,7 @@ function menuCardTemplate(item) {
             <a class="small-btn neutral" href="${escapeHtml(detailUrl)}" onclick="event.stopPropagation()">Xem chi tiết</a>
             <div class="menu-quantity-control" onclick="event.stopPropagation()">
               <button type="button" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation(); changeMenuQuantity(${item.id}, -1)">-</button>
-              <input id="menuQty-${item.id}" type="number" min="1" max="${MENU_MAX_QUANTITY}" value="1" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation()" oninput="normalizeMenuQuantity(this)" />
+              <input id="menuQty-${item.id}" type="number" min="1" max="${maxQuantity}" data-max-quantity="${maxQuantity}" value="1" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation()" oninput="normalizeMenuQuantity(this)" />
               <button type="button" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation(); changeMenuQuantity(${item.id}, 1)">+</button>
             </div>
             <button class="small-btn" type="button" ${item.isAvailable === false ? 'disabled' : ''} onclick="event.stopPropagation(); menuAddToCart(getMenuSource().find(food => food.id === ${item.id}), getMenuQuantity(${item.id}))">Thêm vào giỏ hàng</button>
@@ -648,8 +662,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  document.getElementById('menuQuickSearch')?.addEventListener('input', event => {
+  const menuSearchInput = document.getElementById('menuQuickSearch');
+  const menuSearchClear = document.getElementById('menuSearchClear');
+
+  menuSearchInput?.addEventListener('input', event => {
     activeMenuKeyword = event.target.value.trim();
+    if (menuSearchClear) menuSearchClear.hidden = !activeMenuKeyword;
+    renderDedicatedMenu();
+  });
+
+  menuSearchClear?.addEventListener('click', () => {
+    if (!menuSearchInput) return;
+    menuSearchInput.value = '';
+    activeMenuKeyword = '';
+    menuSearchClear.hidden = true;
+    menuSearchInput.focus();
     renderDedicatedMenu();
   });
 
